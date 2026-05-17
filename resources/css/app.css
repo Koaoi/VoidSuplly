@@ -1,0 +1,87 @@
+/* resources/css/app.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    * {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #0a0a0a;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #2a2a2a;
+        border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #3a3a3a;
+    }
+
+    ::selection {
+        background: rgba(255, 255, 255, 0.15);
+        color: #f5f5f5;
+    }
+}
+
+@layer components {
+    /* Input base style yang sering dipakai */
+    .input-void {
+        @apply w-full bg-void-dark border border-void-border text-void-white placeholder-void-gray
+               rounded-xl px-4 py-3 text-sm
+               focus:outline-none focus:border-void-muted focus:ring-1 focus:ring-void-muted
+               transition-colors;
+    }
+
+    /* Button variants */
+    .btn-primary {
+        @apply bg-white text-black font-bold px-6 py-3 rounded-xl
+               hover:bg-void-light transition-all duration-200 tracking-wide
+               active:scale-[0.98] text-sm;
+    }
+
+    .btn-secondary {
+        @apply border border-void-border text-void-light font-medium px-6 py-3 rounded-xl
+               hover:border-void-muted hover:bg-void-card transition-all duration-200
+               active:scale-[0.98] text-sm;
+    }
+
+    .btn-danger {
+        @apply bg-red-500/10 border border-red-500/30 text-red-400 font-medium px-6 py-3 rounded-xl
+               hover:bg-red-500/20 transition-all duration-200 text-sm;
+    }
+
+    /* Card base */
+    .card-void {
+        @apply bg-void-card border border-void-border rounded-2xl;
+    }
+
+    /* Badge produk */
+    .badge-limited {
+        @apply text-[10px] font-bold tracking-widest bg-white text-black px-2.5 py-0.5 rounded-full uppercase;
+    }
+
+    .badge-sold-out {
+        @apply text-[10px] font-bold tracking-widest bg-red-500/20 text-red-400 border border-red-500/30 px-2.5 py-0.5 rounded-full uppercase;
+    }
+
+    .badge-preorder {
+        @apply text-[10px] font-bold tracking-widest bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-2.5 py-0.5 rounded-full uppercase;
+    }
+
+    .badge-coming-soon {
+        @apply text-[10px] font-bold tracking-widest bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2.5 py-0.5 rounded-full uppercase;
+    }
+}
