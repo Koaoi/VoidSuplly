@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\OrderController      as AdminOrder;
 use App\Http\Controllers\Admin\UserController       as AdminUser;
 use App\Http\Controllers\Admin\CommissionController as AdminCommission;
 use App\Http\Controllers\Admin\ReviewController     as AdminReview;
+use App\Http\Controllers\Admin\ReportController     as ReportController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Http;
 
@@ -184,6 +185,21 @@ Route::middleware(['auth', 'isAdmin'])
         });
     });
 
+/*
+|==========================================================================
+| ADMIN REPORT ROUTES (Di luar group admin agar lebih rapi)
+|==========================================================================
+*/
+Route::middleware(['auth', 'isAdmin'])
+    ->prefix('admin/reports')
+    ->name('admin.reports.')
+    ->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\ReportController::class, 'index'])->name('index');
+        Route::get('/sales', [App\Http\Controllers\Admin\ReportController::class, 'sales'])->name('sales');
+        Route::get('/products', [App\Http\Controllers\Admin\ReportController::class, 'products'])->name('products');
+        Route::get('/print-sales', [App\Http\Controllers\Admin\ReportController::class, 'printSales'])->name('print-sales');
+        Route::get('/print-products', [App\Http\Controllers\Admin\ReportController::class, 'printProducts'])->name('print-products');
+    });
 /*
 |==========================================================================
 | TEST ROUTES (Untuk Debug)

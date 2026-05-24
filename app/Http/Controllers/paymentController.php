@@ -13,7 +13,7 @@ class PaymentController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->except(['midtransCallback']);
         
         // Konfigurasi Midtrans
         Config::$serverKey = config('midtrans.server_key');
@@ -190,7 +190,6 @@ class PaymentController extends Controller
     {
         Log::info('=== MIDTRANS CALLBACK RAW ===');
         Log::info('Raw input: ' . $request->getContent());
-        Log::info('All input: ', $request->all());
         
         $serverKey = config('midtrans.server_key');
         $hashed = hash('sha512', $request->order_id . $request->status_code . $request->gross_amount . $serverKey);
@@ -200,10 +199,7 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Invalid signature'], 403);
         }
 
-        // Extract order code (format: ORDERCODE-timestamp)
         $orderCode = explode('-', $request->order_id)[0];
-        Log::info('Extracted order_code: ' . $orderCode);
-        
         $order = Order::where('order_code', $orderCode)->first();
 
         if (!$order) {
@@ -214,28 +210,21 @@ class PaymentController extends Controller
         $transactionStatus = $request->transaction_status;
         $fraudStatus = $request->fraud_status;
         $paymentType = $request->payment_type;
+        $transactionId = $request->transaction_id; // Ambil ID Transaksi dari Midtrans
 
-        Log::info('Processing Midtrans Callback', [
-            'order_id' => $order->id,
-            'order_code' => $order->order_code,
-            'transaction_status' => $transactionStatus,
-            'payment_type' => $paymentType
-        ]);
-
-        // Get or create payment record
+        // Ambil record payment atau buat baru jika belum ada
         $payment = Payment::where('order_id', $order->id)->first();
         if (!$payment) {
             $payment = Payment::create([
                 'order_id' => $order->id,
                 'amount' => $order->total_price,
                 'status' => 'pending',
-                'method' => $paymentType ?? 'unknown',
+                'method' => $paymentType ?? 'midtrans',
             ]);
         }
 
-        // Save payment details
         $paymentDetails = [
-            'transaction_id' => $request->transaction_id,
+            'transaction_id' => $transactionId,
             'order_id' => $request->order_id,
             'gross_amount' => $request->gross_amount,
             'payment_type' => $paymentType,
@@ -248,26 +237,23 @@ class PaymentController extends Controller
         if ($request->va_numbers) {
             $paymentDetails['va_numbers'] = $request->va_numbers;
         }
-        
         if ($request->qr_code_url) {
             $paymentDetails['qr_code_url'] = $request->qr_code_url;
         }
 
+        // UPDATE SELURUH DATA KOLOM MIDTRANS DI SINI
         $payment->update([
-            'payment_details' => json_encode($paymentDetails),
-            'method' => $paymentType ?? $payment->method,
+            'payment_details'         => json_encode($paymentDetails),
+            'method'                  => $paymentType ?? $payment->method,
+            'midtrans_payment_type'   => $paymentType ?? $payment->midtrans_payment_type,
+            'midtrans_transaction_id' => $transactionId ?? $payment->midtrans_transaction_id
         ]);
 
-        // Update order status based on transaction status
-        if ($transactionStatus == 'capture' && $fraudStatus == 'accept') {
+        // Atur Status Berdasarkan Hasil Callback
+        if (($transactionStatus == 'capture' && $fraudStatus == 'accept') || $transactionStatus == 'settlement') {
             $order->update(['status' => 'paid']);
             $payment->update(['status' => 'paid', 'paid_at' => now()]);
             Log::info('✅ PAYMENT SUCCESS for order: ' . $order->order_code);
-        } 
-        elseif ($transactionStatus == 'settlement') {
-            $order->update(['status' => 'paid']);
-            $payment->update(['status' => 'paid', 'paid_at' => now()]);
-            Log::info('✅ PAYMENT SUCCESS (settlement) for order: ' . $order->order_code);
         } 
         elseif ($transactionStatus == 'pending') {
             $order->update(['status' => 'pending']);
@@ -284,134 +270,109 @@ class PaymentController extends Controller
     }
 
     /**
-     * Manual Callback (dipanggil dari frontend setelah popup sukses)
+     * Manual Callback (Dipanggil langsung dari popup JS frontend)
      */
     public function manualCallback(Request $request, string $code)
     {
         Log::info('Manual callback called: ' . $code);
-        Log::info('Request data: ', $request->all());
         
         $order = Order::where('order_code', $code)->first();
-        
         if (!$order) {
             return response()->json(['success' => false, 'message' => 'Order not found'], 404);
         }
         
-        // Update order status
         $order->update(['status' => 'paid']);
-        
-        // Update or create payment record
         $payment = Payment::where('order_id', $order->id)->first();
         
-        // Ambil metode pembayaran dari request
+        // Deteksi Metode Pembayaran dari Request Frontend
         $paymentMethod = $request->input('payment_method') ?? 
                          $request->input('payment_type') ?? 
                          $request->input('method') ?? 
                          'midtrans';
+                         
+        $midtransTxId = $request->input('transaction_id') ?? null;
         
-        // Map payment method ke format yang lebih readable
+        // Pengecekan jika data dibungkus dalam objek 'result'
+        if ($request->has('result')) {
+            $result = $request->input('result');
+            $paymentMethod = $result['payment_type'] ?? $result['payment_method'] ?? $paymentMethod;
+            $midtransTxId = $result['transaction_id'] ?? $midtransTxId;
+        }
+
         $methodMapping = [
-            'bca_va' => 'bca_va',
-            'mandiri_va' => 'mandiri_va',
-            'bni_va' => 'bni_va',
-            'bri_va' => 'bri_va',
-            'cimb_va' => 'cimb_va',
-            'qris' => 'qris',
-            'gopay' => 'gopay',
-            'shopeepay' => 'shopeepay',
-            'credit_card' => 'credit_card',
-            'bank_transfer' => 'bank_transfer',
-            'alfamart' => 'alfamart',
-            'indomaret' => 'indomaret',
+            'bca_va' => 'bca_va', 'mandiri_va' => 'mandiri_va', 'bni_va' => 'bni_va', 
+            'bri_va' => 'bri_va', 'cimb_va' => 'cimb_va', 'qris' => 'qris', 
+            'gopay' => 'gopay', 'shopeepay' => 'shopeepay', 'credit_card' => 'credit_card', 
+            'bank_transfer' => 'bank_transfer', 'alfamart' => 'alfamart', 'indomaret' => 'indomaret',
         ];
         
         $finalMethod = $methodMapping[$paymentMethod] ?? $paymentMethod;
         
-        // Juga cek dari result Midtrans
-        if ($request->has('result')) {
-            $result = $request->input('result');
-            if (isset($result['payment_type'])) {
-                $finalMethod = $methodMapping[$result['payment_type']] ?? $result['payment_type'];
-            }
-            if (isset($result['payment_method'])) {
-                $finalMethod = $methodMapping[$result['payment_method']] ?? $result['payment_method'];
-            }
-        }
-        
-        Log::info('Payment method detected: ' . $finalMethod);
-        
         if ($payment) {
             $payment->update([
-                'status' => 'paid',
-                'paid_at' => now(),
-                'method' => $finalMethod,
-                'payment_details' => json_encode($request->all())
+                'status'                  => 'paid',
+                'paid_at'                 => now(),
+                'method'                  => $finalMethod,
+                'midtrans_payment_type'   => $finalMethod,
+                'midtrans_transaction_id' => $midtransTxId,
+                'payment_details'         => json_encode($request->all())
             ]);
-            Log::info('Payment updated with method: ' . $finalMethod);
         } else {
-            $payment = Payment::create([
-                'order_id' => $order->id,
-                'amount' => $order->total_price,
-                'status' => 'paid',
-                'paid_at' => now(),
-                'method' => $finalMethod,
-                'payment_details' => json_encode($request->all())
+            Payment::create([
+                'order_id'                => $order->id,
+                'amount'                  => $order->total_price,
+                'status'                  => 'paid',
+                'paid_at'                 => now(),
+                'method'                  => $finalMethod,
+                'midtrans_payment_type'   => $finalMethod,
+                'midtrans_transaction_id' => $midtransTxId,
+                'payment_details'         => json_encode($request->all())
             ]);
-            Log::info('Payment created with method: ' . $finalMethod);
         }
         
         return response()->json([
-            'success' => true,
-            'order_code' => $order->order_code,
-            'status' => $order->status,
+            'success'        => true,
+            'order_code'     => $order->order_code,
+            'status'         => $order->status,
             'payment_status' => $payment->status,
             'payment_method' => $payment->method
         ]);
     }
 
     /**
-     * Update payment status
+     * Update payment status secara internal
      */
     private function updatePaymentStatus(int $orderId, string $status): void
     {
         $payment = Payment::where('order_id', $orderId)->first();
         if ($payment) {
             $payment->update(['status' => $status]);
-            
             if ($status === 'paid') {
                 $payment->update(['paid_at' => now()]);
             }
         }
     }
 
-    /**
-     * Konfirmasi pembayaran manual (Admin)
-     */
     public function confirmPayment(Request $request, int $orderId)
     {
         $order = Order::findOrFail($orderId);
-        
         $order->update(['status' => 'paid']);
         
         $payment = Payment::where('order_id', $orderId)->first();
         if ($payment) {
             $payment->update([
                 'status' => 'paid',
-                'paid_at' => now()
+                'paid_at' => now(),
+                'method' => $payment->method ?? 'manual_transfer'
             ]);
         }
         
-        return redirect()->route('admin.orders.index')
-            ->with('success', 'Pembayaran dikonfirmasi.');
+        return redirect()->route('admin.orders.index')->with('success', 'Pembayaran dikonfirmasi.');
     }
 
-    /**
-     * Tolak pembayaran manual (Admin)
-     */
     public function rejectPayment(Request $request, int $orderId)
     {
         $order = Order::findOrFail($orderId);
-        
         $order->update(['status' => 'cancelled']);
         
         $payment = Payment::where('order_id', $orderId)->first();
@@ -419,8 +380,7 @@ class PaymentController extends Controller
             $payment->update(['status' => 'failed']);
         }
         
-        return redirect()->route('admin.orders.index')
-            ->with('success', 'Pembayaran ditolak.');
+        return redirect()->route('admin.orders.index')->with('success', 'Pembayaran ditolak.');
     }
 
     private function getEnabledPayments(string $method, string $type): array
@@ -432,14 +392,12 @@ class PaymentController extends Controller
             if ($method === 'indomaret') return ['indomaret'];
             return ['alfamart', 'indomaret'];
         }
-        
         return ['bca_va', 'bni_va', 'bri_va', 'mandiri_va', 'cimb_va', 'gopay', 'qris', 'shopeepay', 'alfamart', 'indomaret'];
     }
 
     private function getItemDetails(Order $order): array
     {
         $items = [];
-        
         foreach ($order->items as $item) {
             $items[] = [
                 'id' => (string) $item->product_id,
@@ -448,7 +406,6 @@ class PaymentController extends Controller
                 'name' => substr($item->product_name . ' (' . ($item->size ?? 'FREE') . ')', 0, 50),
             ];
         }
-        
         if ($order->shipping_cost > 0) {
             $items[] = [
                 'id' => 'SHIPPING',
@@ -457,7 +414,6 @@ class PaymentController extends Controller
                 'name' => 'Ongkos Kirim',
             ];
         }
-        
         return $items;
     }
 }

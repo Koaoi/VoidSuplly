@@ -268,11 +268,12 @@
             </div>
         </div>
 
-        <div class="flex gap-3">
-            <a href="{{ route('home') }}" class="flex-1 bg-void-card border border-void-border text-center py-3 rounded-xl text-sm text-void-gray hover:text-void-white transition-colors">
+        {{-- Kedua Button Menggunakan Tema Hitam/Gelap Senada --}}
+        <div class="flex flex-col sm:flex-row gap-3 mt-6">
+            <a href="{{ route('home') }}" class="flex-1 bg-void-card border border-void-border text-center py-3 rounded-xl text-sm font-semibold text-void-white hover:bg-void-dark transition-all duration-200">
                 Kembali ke Toko
             </a>
-            <a href="{{ route('orders.show', $order->order_code) }}" class="flex-1 bg-void-accent text-center py-3 rounded-xl text-sm text-white font-semibold hover:bg-void-accent/80 transition-colors">
+            <a href="{{ route('orders.show', $order->order_code) }}" class="flex-1 bg-void-card border border-void-accent text-center py-3 rounded-xl text-sm text-void-accent font-bold hover:bg-void-accent hover:text-white transition-all duration-200 shadow-md">
                 Lihat Pesanan
             </a>
         </div>
