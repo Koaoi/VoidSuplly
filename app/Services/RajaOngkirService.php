@@ -17,12 +17,18 @@ class RajaOngkirService
 
     public function __construct()
     {
-        $this->apiKey  = config('services.rajaongkir.api_key', '');
-        $this->baseUrl = rtrim(config('services.rajaongkir.base_url', 'https://rajaongkir.komerce.id/api/v1'), '/');
-        $this->originId = config('services.rajaongkir.origin_subdistrict', '');
+        // FIX: Gunakan config rajaongkir.php
+        $this->apiKey  = config('rajaongkir.api_key', '');
+        $this->baseUrl = rtrim(config('rajaongkir.base_url', 'https://rajaongkir.komerce.id/api/v1'), '/');
+        $this->originId = config('rajaongkir.origin_subdistrict', '');
+        
+        // Debug: log config
+        Log::info('RajaOngkir Service initialized', [
+            'base_url' => $this->baseUrl,
+            'api_key_set' => !empty($this->apiKey),
+            'origin_id' => $this->originId
+        ]);
     }
-
-    // ─── Public: Daftar Kurir ─────────────────────────────────────────────────
 
     public static function availableCouriers(): array
     {
@@ -38,37 +44,40 @@ class RajaOngkirService
         ];
     }
 
-    // ─── Public: Step-by-Step Method ─────────────────────────────────────────
-
     public function getProvinces(): array
     {
         return Cache::remember('komerce:provinces', self::CACHE_TTL, function () {
-            return $this->get('/destination/province') ?? [];
+            $data = $this->get('/destination/province');
+            return is_array($data) ? $data : [];
         });
     }
 
+    // FIX: Perbaiki path dan parameter untuk cities
     public function getCities(int|string $provinceId): array
     {
         return Cache::remember("komerce:cities:{$provinceId}", self::CACHE_TTL, function () use ($provinceId) {
-            return $this->get('/city', ['province_id' => $provinceId]) ?? [];
+            $data = $this->get('/destination/city', ['province' => $provinceId]);
+            return is_array($data) ? $data : [];
         });
     }
 
+    // FIX: Perbaiki path dan parameter untuk districts
     public function getDistricts(int|string $cityId): array
     {
         return Cache::remember("komerce:districts:{$cityId}", self::CACHE_TTL, function () use ($cityId) {
-            return $this->get('/destination/district', ['city_id' => $cityId]) ?? [];
+            $data = $this->get('/destination/district', ['city' => $cityId]);
+            return is_array($data) ? $data : [];
         });
     }
 
+    // FIX: Perbaiki path dan parameter untuk subdistricts
     public function getSubDistricts(int|string $districtId): array
     {
         return Cache::remember("komerce:subdistricts:{$districtId}", self::CACHE_TTL, function () use ($districtId) {
-            return $this->get('/destination/subdistrict', ['district_id' => $districtId]) ?? [];
+            $data = $this->get('/destination/subdistrict', ['district' => $districtId]);
+            return is_array($data) ? $data : [];
         });
     }
-
-    // ─── Public: Direct Search Method ────────────────────────────────────────
 
     public function searchDestination(string $keyword, int $limit = 10, int $offset = 0): array
     {
@@ -76,35 +85,31 @@ class RajaOngkirService
             return [];
         }
 
-        // Search tidak di-cache karena kombinasinya tak terbatas
-        return $this->get('/destination/domestic-destination', [
+        $data = $this->get('/destination/domestic-destination', [
             'search' => trim($keyword),
             'limit'  => $limit,
             'offset' => $offset,
-        ]) ?? [];
+        ]);
+        
+        return is_array($data) ? $data : [];
     }
 
-    // ─── Public: Hitung Ongkir ────────────────────────────────────────────────
-
-    /**
-     * @param  int|string  $destinationId  Subdistrict ID tujuan
-     * @param  int         $weightGram     Berat dalam gram (minimum 1000)
-     * @param  string      $courier        Kode kurir: jne, jnt, sicepat, dll
-     * @return array       Berisi list layanan dengan cost & etd
-     */
     public function calculateCost(int|string $destinationId, int $weightGram, string $courier): array
     {
         if (empty($this->originId)) {
             Log::warning('RajaOngkir: RAJAONGKIR_ORIGIN_SUBDISTRICT belum diset di .env');
+            return [];
         }
 
-        return $this->post('/calculate/domestic-cost', [
+        $data = $this->post('/calculate/domestic-cost', [
             'origin'      => $this->originId,
             'destination' => $destinationId,
             'weight'      => max(1000, $weightGram),
             'courier'     => strtolower($courier),
             'price'       => 'lowest',
-        ]) ?? [];
+        ]);
+        
+        return is_array($data) ? $data : [];
     }
 
     // ─── Private: HTTP Helpers ────────────────────────────────────────────────
@@ -117,15 +122,15 @@ class RajaOngkirService
         ];
     }
 
-    /**
-     * GET request — mengembalikan data[] atau null jika gagal.
-     */
     private function get(string $path, array $query = []): ?array
     {
         try {
+            $url = $this->baseUrl . $path;
+            Log::info('RajaOngkir GET: ' . $url, ['query' => $query]);
+            
             $response = Http::timeout(10)
                 ->withHeaders($this->headers())
-                ->get($this->baseUrl . $path, $query);
+                ->get($url, $query);
 
             return $this->parseResponse($response, $path);
 
@@ -135,18 +140,16 @@ class RajaOngkirService
         }
     }
 
-    /**
-     * POST request — mengembalikan data[] atau null jika gagal.
-     */
     private function post(string $path, array $payload = []): ?array
     {
         try {
+            $url = $this->baseUrl . $path;
+            Log::info('RajaOngkir POST: ' . $url, ['payload' => $payload]);
+            
             $response = Http::timeout(15)
-                ->withHeaders(array_merge($this->headers(), [
-                    'Content-Type' => 'application/x-www-form-urlencoded',
-                ]))
+                ->withHeaders($this->headers())
                 ->asForm()
-                ->post($this->baseUrl . $path, $payload);
+                ->post($url, $payload);
 
             return $this->parseResponse($response, $path);
 
@@ -156,18 +159,28 @@ class RajaOngkirService
         }
     }
 
-    /**
-     * Parse response Komerce API.
-     * Struktur response: { meta: {...}, data: [...] }
-     */
     private function parseResponse(Response $response, string $path): ?array
     {
+        Log::info("RajaOngkir {$path} response status: " . $response->status());
+        
         if ($response->successful()) {
+            // Coba ambil dari key 'data' (format Komerce)
             $data = $response->json('data');
-
-            if (is_array($data)) {
+            
+            if (is_array($data) && !empty($data)) {
                 return $data;
             }
+            
+            // Fallback: coba ambil dari 'rajaongkir.results' (format lama)
+            $rajaongkir = $response->json('rajaongkir');
+            if (isset($rajaongkir['results']) && is_array($rajaongkir['results'])) {
+                return $rajaongkir['results'];
+            }
+            
+            // Jika data kosong, log untuk debug
+            Log::warning("RajaOngkir {$path} data kosong", [
+                'full_response' => $response->json()
+            ]);
         }
 
         Log::warning("RajaOngkir {$path} response tidak valid", [

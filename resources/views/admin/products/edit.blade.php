@@ -148,17 +148,27 @@
     <div class="space-y-5">
         <div class="bg-void-card border border-void-border rounded-2xl p-5 space-y-4">
             <h2 class="text-xs font-bold tracking-widest text-void-white uppercase">Opsi Produk</h2>
+            
             <label class="flex items-center justify-between cursor-pointer">
                 <span class="text-sm text-void-light">Limited Edition</span>
                 <input type="checkbox" name="is_limited" value="1"
                        {{ old('is_limited',$product->is_limited) ? 'checked' : '' }}
                        class="w-4 h-4 rounded bg-void-dark border-void-border text-void-accent focus:ring-0">
             </label>
+            
+            {{-- RELEASE DATE --}}
             <div>
                 <label class="block text-xs font-bold text-void-light uppercase tracking-wider mb-2">Release Date</label>
+                @php
+                    $releaseDateValue = '';
+                    if ($product->release_date) {
+                        $releaseDateValue = \Carbon\Carbon::parse($product->release_date)->format('Y-m-d\TH:i');
+                    }
+                @endphp
                 <input type="datetime-local" name="release_date"
-                       value="{{ old('release_date', $product->release_date?->format('Y-m-d\TH:i')) }}"
+                       value="{{ old('release_date', $releaseDateValue) }}"
                        class="input-void text-sm">
+                <p class="text-[10px] text-void-muted mt-1">Kosongkan jika tidak ada (hanya untuk Coming Soon / Preorder)</p>
             </div>
         </div>
 
@@ -182,7 +192,6 @@
 async function deleteImg(id, btn) {
     if (!confirm('Hapus gambar ini?')) return;
     
-    // PERBAIKAN: URL tanpa huruf 's' di "images"
     const url = `/admin/products/image/${id}`;
     
     try {
@@ -206,7 +215,6 @@ async function deleteImg(id, btn) {
 }
 
 async function setPrimary(id, btn) {
-    // PERBAIKAN: URL tanpa huruf 's' di "images"
     const url = `/admin/products/image/${id}/primary`;
     
     try {

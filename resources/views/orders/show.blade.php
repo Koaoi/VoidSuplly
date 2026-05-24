@@ -61,7 +61,6 @@
                 $currentIdx = array_search($order->status, $steps);
                 $currentIdx = $currentIdx === false ? 0 : $currentIdx;
                 
-                // Hitung estimasi tanggal sampai
                 $estimatedArrival = null;
                 if ($order->shippingAddress && $order->shippingAddress->estimated_days && $order->status === 'shipped') {
                     $shippedDate = $order->updated_at ?? $order->created_at;
@@ -74,15 +73,12 @@
                     Status Pesanan
                 </h2>
                 <div class="relative">
-                    {{-- Background line --}}
                     <div class="absolute top-4 left-4 right-4 h-0.5 bg-void-border"></div>
                     
-                    {{-- Active line (warna putih) --}}
                     <div class="absolute top-4 left-4 h-0.5 bg-white transition-all duration-700"
                          style="width: {{ $currentIdx > 0 ? min(($currentIdx / (count($steps) - 1)) * 100, 100) : 0 }}%">
                     </div>
 
-                    {{-- Step dots --}}
                     <div class="relative flex justify-between">
                         @foreach($steps as $i => $step)
                             @php $done = $i <= $currentIdx; @endphp
@@ -108,7 +104,6 @@
                     </div>
                 </div>
 
-                {{-- Estimasi Kedatangan (untuk status shipped) --}}
                 @if($order->status === 'shipped' && $estimatedArrival)
                     <div class="mt-6 pt-4 border-t border-void-border flex items-center justify-between">
                         <div class="flex items-center gap-2">
@@ -144,7 +139,7 @@
             </div>
         @endif
 
-        {{-- ── PESANAN SELESAI (untuk status completed) ───────────────────────── --}}
+        {{-- ── PESANAN SELESAI ───────────────────────── --}}
         @if($order->status === 'completed')
             <div class="bg-green-500/10 border border-green-500/30 rounded-2xl p-5 mb-6">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -269,7 +264,7 @@
                     </div>
                 </div>
 
-                {{-- Review section (hanya untuk completed) --}}
+                {{-- Review section --}}
                 @if($order->status === 'completed')
                     <div class="bg-void-card border border-void-border rounded-2xl overflow-hidden">
                         <div class="px-5 py-4 border-b border-void-border">
@@ -406,7 +401,7 @@
                     </div>
                 @endif
 
-                {{-- Info pembayaran --}}
+                {{-- INFO PEMBAYARAN - DIPERBAIKI --}}
                 @if($order->payment)
                     <div class="bg-void-card border border-void-border rounded-2xl p-5">
                         <h3 class="text-xs font-bold tracking-[0.2em] text-void-white uppercase mb-4">
@@ -416,19 +411,48 @@
                             <div class="flex justify-between items-center">
                                 <span class="text-void-gray">Metode</span>
                                 <span class="text-void-light capitalize font-medium">
-                                    {{ $order->payment->method
-                                        ? str_replace('_', ' ', $order->payment->method)
-                                        : '—' }}
+                                    @php
+                                        $methodName = $order->payment->method ?? '—';
+                                        $methodDisplay = [
+                                            'bca_va' => 'BCA Virtual Account',
+                                            'mandiri_va' => 'Mandiri Virtual Account',
+                                            'bni_va' => 'BNI Virtual Account',
+                                            'bri_va' => 'BRI Virtual Account',
+                                            'cimb_va' => 'CIMB Virtual Account',
+                                            'qris' => 'QRIS',
+                                            'gopay' => 'GoPay',
+                                            'shopeepay' => 'ShopeePay',
+                                            'ovo' => 'OVO',
+                                            'dana' => 'DANA',
+                                            'alfamart' => 'Alfamart',
+                                            'indomaret' => 'Indomaret',
+                                            'manual_transfer' => 'Transfer Manual',
+                                            'credit_card' => 'Kartu Kredit',
+                                            'midtrans' => 'Midtrans',
+                                        ][$methodName] ?? ucfirst(str_replace('_', ' ', $methodName))
+                                    @endphp
+                                    {{ $methodDisplay }}
                                 </span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-void-gray">Status</span>
-                                <span class="font-bold capitalize text-void-white">
-                                    {{ $order->payment->status === 'paid' ? 'Lunas' : ($order->payment->status === 'pending' ? 'Menunggu Verifikasi' : $order->payment->status) }}
+                                <span class="font-bold capitalize
+                                    @if($order->payment->status === 'paid') text-green-400
+                                    @elseif($order->payment->status === 'pending') text-yellow-400
+                                    @else text-red-400 @endif">
+                                    @php
+                                        $statusDisplay = [
+                                            'paid' => 'Lunas',
+                                            'pending' => 'Menunggu Verifikasi',
+                                            'failed' => 'Gagal',
+                                            'expired' => 'Kadaluarsa',
+                                        ][$order->payment->status] ?? ucfirst($order->payment->status)
+                                    @endphp
+                                    {{ $statusDisplay }}
                                 </span>
                             </div>
                             <div class="flex justify-between items-center">
-                                <span class="text-void-gray">Jumlah</span>
+                                <span class="text-void-gray">Jumlah Dibayar</span>
                                 <span class="text-void-accent font-black">
                                     Rp {{ number_format($order->payment->amount ?? $order->total_price, 0, ',', '.') }}
                                 </span>
@@ -441,13 +465,28 @@
                                     </span>
                                 </div>
                             @endif
-                            @if($order->payment->midtrans_transaction_id)
-                                <div class="flex flex-col gap-0.5 pt-2 border-t border-void-border">
-                                    <span class="text-void-gray">Transaction ID</span>
-                                    <span class="text-void-muted font-mono text-[10px] break-all">
-                                        {{ $order->payment->midtrans_transaction_id }}
-                                    </span>
-                                </div>
+                            @if($order->payment->payment_details)
+                                @php
+                                    $details = is_string($order->payment->payment_details) 
+                                        ? json_decode($order->payment->payment_details, true) 
+                                        : $order->payment->payment_details;
+                                @endphp
+                                @if(isset($details['va_numbers']) && !empty($details['va_numbers']))
+                                    @foreach($details['va_numbers'] as $va)
+                                        <div class="pt-2 border-t border-void-border">
+                                            <p class="text-void-gray text-[10px] mb-1">Virtual Account</p>
+                                            <p class="text-void-light font-mono text-xs">{{ strtoupper($va['bank']) }}: {{ $va['va_number'] }}</p>
+                                        </div>
+                                    @endforeach
+                                @endif
+                                @if(isset($details['transaction_id']))
+                                    <div class="flex flex-col gap-0.5 pt-2 border-t border-void-border">
+                                        <span class="text-void-gray">Transaction ID</span>
+                                        <span class="text-void-muted font-mono text-[10px] break-all">
+                                            {{ $details['transaction_id'] }}
+                                        </span>
+                                    </div>
+                                @endif
                             @endif
                             @if($order->payment->proof_image_url)
                                 <div class="pt-2 border-t border-void-border">
@@ -462,6 +501,21 @@
                                         Lihat Bukti Transfer
                                     </a>
                                 </div>
+                            @endif
+                        </div>
+                    </div>
+                @else
+                    <div class="bg-void-card border border-void-border rounded-2xl p-5">
+                        <h3 class="text-xs font-bold tracking-[0.2em] text-void-white uppercase mb-4">
+                            Info Pembayaran
+                        </h3>
+                        <div class="text-center py-3">
+                            <p class="text-void-gray text-sm">Belum ada info pembayaran</p>
+                            @if($order->status === 'pending')
+                                <a href="{{ route('payment.show', $order->order_code) }}" 
+                                   class="inline-block mt-3 px-4 py-2 rounded-lg bg-void-accent text-black text-xs font-bold">
+                                    Lakukan Pembayaran
+                                </a>
                             @endif
                         </div>
                     </div>

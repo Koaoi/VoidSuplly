@@ -6,95 +6,96 @@ use App\Http\Controllers\Controller;
 use App\Services\RajaOngkirService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class RajaOngkirController extends Controller
 {
     public function __construct(private readonly RajaOngkirService $service)
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->except(['provinces', 'cities', 'districts', 'cost']);
     }
-
-    // ─── Step-by-Step endpoints ───────────────────────────────────────────────
 
     public function provinces(): JsonResponse
     {
         $data = $this->service->getProvinces();
 
-        return $this->successOrError($data, 'Gagal memuat daftar provinsi.');
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
+        ]);
     }
 
     public function cities(Request $request): JsonResponse
     {
-        $request->validate(['province_id' => ['required']]);
+        $validated = $request->validate([
+            'province_id' => ['required'],
+        ]);
 
-        $data = $this->service->getCities($request->province_id);
+        Log::info('Cities request received', ['province_id' => $validated['province_id']]);
 
-        return $this->successOrError($data, 'Gagal memuat daftar kota.');
+        $data = $this->service->getCities($validated['province_id']);
+
+        Log::info('Cities response', ['count' => count($data)]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
+            'message' => empty($data) ? 'Tidak ada kota ditemukan untuk provinsi ini.' : null,
+        ]);
     }
 
     public function districts(Request $request): JsonResponse
     {
-        $request->validate(['city_id' => ['required']]);
+        $validated = $request->validate([
+            'city_id' => ['required'],
+        ]);
 
-        $data = $this->service->getDistricts($request->city_id);
+        $data = $this->service->getDistricts($validated['city_id']);
 
-        return $this->successOrError($data, 'Gagal memuat daftar kecamatan.');
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
+        ]);
     }
 
     public function subdistricts(Request $request): JsonResponse
     {
-        $request->validate(['district_id' => ['required']]);
-
-        $data = $this->service->getSubDistricts($request->district_id);
-
-        return $this->successOrError($data, 'Gagal memuat daftar kelurahan.');
-    }
-
-    // ─── Direct Search endpoint ───────────────────────────────────────────────
-
-    public function search(Request $request): JsonResponse
-    {
-        $request->validate([
-            'q'      => ['required', 'string', 'min:2', 'max:100'],
-            'limit'  => ['sometimes', 'integer', 'min:1', 'max:50'],
-            'offset' => ['sometimes', 'integer', 'min:0'],
+        $validated = $request->validate([
+            'district_id' => ['required'],
         ]);
 
-        $data = $this->service->searchDestination(
-            $request->q,
-            (int) $request->get('limit', 10),
-            (int) $request->get('offset', 0),
-        );
+        $data = $this->service->getSubDistricts($validated['district_id']);
 
-        return $this->successOrError($data, 'Gagal mencari destinasi.');
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
+        ]);
     }
-
-    // ─── Calculate Cost endpoint ──────────────────────────────────────────────
 
     public function cost(Request $request): JsonResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'destination_id' => ['required'],
-            'courier'        => ['required', 'string', 'in:' . implode(',', array_keys(RajaOngkirService::availableCouriers()))],
+            'courier'        => ['required', 'string'],
             'weight'         => ['sometimes', 'integer', 'min:1'],
         ]);
 
-        // Jika weight tidak dikirim, hitung dari cart user
         $weight = $request->filled('weight')
             ? (int) $request->weight
             : $this->getCartWeight();
 
         $data = $this->service->calculateCost(
-            $request->destination_id,
+            $validated['destination_id'],
             $weight,
-            $request->courier,
+            $validated['courier'],
         );
 
         if (empty($data)) {
             return response()->json([
                 'success' => false,
+                'costs'   => [],
                 'message' => 'Tidak ada layanan tersedia untuk kurir ini. Coba kurir lain.',
-            ], 422);
+            ]);
         }
 
         return response()->json([
@@ -104,8 +105,6 @@ class RajaOngkirController extends Controller
         ]);
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
-
     private function getCartWeight(): int
     {
         $cart = auth()->user()->cart()->with('items.product')->first();
@@ -114,25 +113,8 @@ class RajaOngkirController extends Controller
             return 1000;
         }
 
-        $total = $cart->items->sum(
+        return max(1000, $cart->items->sum(
             fn($item) => ($item->product->weight ?? 300) * $item->quantity
-        );
-
-        return max(1000, $total);
-    }
-
-    private function successOrError(?array $data, string $errorMessage): JsonResponse
-    {
-        if ($data === null || empty($data)) {
-            return response()->json([
-                'success' => false,
-                'message' => $errorMessage . ' API mungkin sedang gangguan.',
-            ], 503);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data'    => $data,
-        ]);
+        ));
     }
 }

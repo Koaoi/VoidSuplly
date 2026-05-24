@@ -1,5 +1,4 @@
 <?php
-// routes/web.php — FINAL VERSI TERBARU (FIXED)
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\SocialAuthController;
@@ -13,7 +12,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\WishlistController;
-use App\Http\Controllers\Api\RajaOngkirController;
+use App\Http\Controllers\RajaOngkirControllerV2;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CategoryController   as AdminCategory;
 use App\Http\Controllers\Admin\ProductController    as AdminProduct;
@@ -36,32 +35,19 @@ Route::get('/product/quick-view/{id}', [ProductController::class, 'quickView'])-
 
 /*
 |==========================================================================
-| RAJAONGKIR API ROUTES (AJAX — Public / Auth)
+| RAJAONGKIR / ONGKIR ROUTES
 |==========================================================================
 */
-// Public routes (tanpa auth) untuk cek ongkir
-Route::prefix('api/shipping')->name('shipping.')->group(function () {
-    // Step-by-step dropdown
-    Route::get('/provinces', [RajaOngkirController::class, 'provinces'])->name('provinces');
-    Route::get('/cities', [RajaOngkirController::class, 'cities'])->name('cities');
-    Route::get('/districts', [RajaOngkirController::class, 'districts'])->name('districts');
-    Route::get('/subdistricts', [RajaOngkirController::class, 'subdistricts'])->name('subdistricts');
-
-    // Direct search (modern autocomplete)
-    Route::get('/search', [RajaOngkirController::class, 'search'])->name('search');
-
-    // Hitung ongkir
-    Route::post('/cost', [RajaOngkirController::class, 'cost'])->name('cost');
-});
-
-/*
-|==========================================================================
-| OLD RAJAONGKIR ROUTES (Fallback untuk template lama)
-|==========================================================================
-*/
-Route::get('/provinces', [RajaOngkirController::class, 'getProvinces']);
-Route::get('/cities', [RajaOngkirController::class, 'getCities']);
-Route::post('/cost', [RajaOngkirController::class, 'getCost']);
+Route::middleware('auth')
+    ->prefix('ongkir')
+    ->name('ongkir.')
+    ->group(function () {
+        Route::get('/provinces',    [RajaOngkirControllerV2::class, 'getProvinces'])->name('provinces');
+        Route::get('/cities',       [RajaOngkirControllerV2::class, 'getCities'])->name('cities');
+        Route::get('/subdistricts', [RajaOngkirControllerV2::class, 'getSubdistricts'])->name('subdistricts');
+        Route::post('/calculate',   [RajaOngkirControllerV2::class, 'calculateOngkir'])->name('calculate');
+        Route::get('/couriers',     [RajaOngkirControllerV2::class, 'getCouriers'])->name('couriers');
+    });
 
 /*
 |==========================================================================
@@ -69,6 +55,7 @@ Route::post('/cost', [RajaOngkirController::class, 'getCost']);
 |==========================================================================
 */
 Route::post('/api/midtrans/callback', [PaymentController::class, 'midtransCallback'])
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])
     ->name('midtrans.callback');
 
 /*
@@ -77,13 +64,10 @@ Route::post('/api/midtrans/callback', [PaymentController::class, 'midtransCallba
 |==========================================================================
 */
 Route::middleware('guest')->group(function () {
-    // Authentication
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'register']);
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
-    
-    // Social Login
     Route::get('/auth/google', [SocialAuthController::class, 'redirect'])->name('auth.google');
     Route::get('/auth/google/callback', [SocialAuthController::class, 'callback'])->name('auth.google.callback');
 });
@@ -94,17 +78,10 @@ Route::middleware('guest')->group(function () {
 |==========================================================================
 */
 Route::middleware('auth')->group(function () {
-    // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
-    // ──────────────────────────────────────────────────────────────────────
-    // PRODUCT NOTIFICATION
-    // ──────────────────────────────────────────────────────────────────────
     Route::post('/product/{product}/notify', [ProductController::class, 'notifyMe'])->name('product.notify');
 
-    // ──────────────────────────────────────────────────────────────────────
-    // CART ROUTES
-    // ──────────────────────────────────────────────────────────────────────
+    // Cart Routes
     Route::prefix('cart')->name('cart.')->group(function () {
         Route::get('/', [CartController::class, 'index'])->name('index');
         Route::post('/add', [CartController::class, 'add'])->name('add');
@@ -115,48 +92,30 @@ Route::middleware('auth')->group(function () {
         Route::get('/details', [CartController::class, 'details'])->name('details');
     });
 
-    // ──────────────────────────────────────────────────────────────────────
-    // WISHLIST ROUTES
-    // ──────────────────────────────────────────────────────────────────────
+    // Wishlist Routes
     Route::prefix('wishlist')->name('wishlist.')->group(function () {
         Route::get('/', [WishlistController::class, 'index'])->name('index');
         Route::post('/toggle', [WishlistController::class, 'toggle'])->name('toggle');
         Route::get('/check/{product}', [WishlistController::class, 'check'])->name('check');
     });
 
-    // ──────────────────────────────────────────────────────────────────────
-    // CHECKOUT ROUTES
-    // ──────────────────────────────────────────────────────────────────────
+    // Checkout Routes
     Route::prefix('checkout')->name('checkout.')->group(function () {
         Route::get('/', [CheckoutController::class, 'index'])->name('index');
         Route::post('/process', [CheckoutController::class, 'process'])->name('process');
     });
 
-    // ──────────────────────────────────────────────────────────────────────
-    // PAYMENT ROUTES
-    // ──────────────────────────────────────────────────────────────────────
-    Route::prefix('payment')->name('payment.')->group(function () {
-        Route::get('/{code}', [PaymentController::class, 'show'])->name('show');
-        Route::post('/{code}/proof', [PaymentController::class, 'uploadProof'])->name('proof');
-    });
-
-    // ──────────────────────────────────────────────────────────────────────
-    // ORDER ROUTES
-    // ──────────────────────────────────────────────────────────────────────
+    // Order Routes
     Route::prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
         Route::get('/{code}', [OrderController::class, 'show'])->name('show');
     });
 
-    // ──────────────────────────────────────────────────────────────────────
-    // REVIEW ROUTES
-    // ──────────────────────────────────────────────────────────────────────
+    // Review Routes
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
 
-    // ──────────────────────────────────────────────────────────────────────
-    // COMMISSION ROUTES
-    // ──────────────────────────────────────────────────────────────────────
+    // Commission Routes
     Route::prefix('commission')->name('commission.')->group(function () {
         Route::get('/', [CommissionController::class, 'index'])->name('index');
         Route::get('/create', [CommissionController::class, 'create'])->name('create');
@@ -165,15 +124,21 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{commission}', [CommissionController::class, 'destroy'])->name('destroy');
     });
 
-    // ──────────────────────────────────────────────────────────────────────
-    // PROFILE ROUTES
-    // ──────────────────────────────────────────────────────────────────────
+    // Profile Routes
     Route::prefix('profile')->name('profile.')->group(function () {
         Route::get('/', [ProfileController::class, 'index'])->name('index');
         Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
         Route::patch('/', [ProfileController::class, 'update'])->name('update');
         Route::put('/change-password', [ProfileController::class, 'changePassword'])->name('change-password');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
+    });
+
+    // Payment Routes (Digabung ke dalam satu middleware 'auth' agar lebih optimal)
+    Route::prefix('payment')->name('payment.')->group(function () {
+        Route::get('/{code}', [PaymentController::class, 'show'])->name('show');
+        Route::post('/{code}/proof', [PaymentController::class, 'uploadProof'])->name('proof');
+        Route::post('/{code}/snap-token', [PaymentController::class, 'getSnapToken'])->name('get-snap-token');
+        Route::post('/{code}/callback-manual', [PaymentController::class, 'manualCallback'])->name('callback-manual');
     });
 });
 
@@ -186,101 +151,108 @@ Route::middleware(['auth', 'isAdmin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::resource('categories', AdminCategory::class)->except(['show']);
+        Route::resource('products', AdminProduct::class);
+        Route::delete('/products/image/{image}', [AdminProduct::class, 'deleteImage'])->name('products.delete-image');
+        Route::post('/products/image/{image}/primary', [AdminProduct::class, 'setPrimaryImage'])->name('products.set-primary');
 
-    // Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/orders', [AdminOrder::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order}', [AdminOrder::class, 'show'])->name('orders.show');
+        Route::put('/orders/{order}/status', [AdminOrder::class, 'updateStatus'])->name('orders.update-status');
+        Route::post('/orders/{order}/confirm-payment', [AdminOrder::class, 'confirmPayment'])->name('orders.confirm-payment');
+        Route::post('/orders/{order}/reject-payment', [AdminOrder::class, 'rejectPayment'])->name('orders.reject-payment');
 
-    // ──────────────────────────────────────────────────────────────────────
-    // CATEGORIES
-    // ──────────────────────────────────────────────────────────────────────
-    Route::resource('categories', AdminCategory::class)->except(['show']);
+        Route::prefix('users')->name('users.')->group(function () {
+            Route::get('/', [AdminUser::class, 'index'])->name('index');
+            Route::get('/{user}', [AdminUser::class, 'show'])->name('show');
+            Route::put('/{user}', [AdminUser::class, 'update'])->name('update');
+            Route::delete('/{user}', [AdminUser::class, 'destroy'])->name('destroy');
+            Route::patch('/{user}/role', [AdminUser::class, 'updateRole'])->name('role');
+        });
 
-    // ──────────────────────────────────────────────────────────────────────
-    // PRODUCTS
-    // ──────────────────────────────────────────────────────────────────────
-    Route::resource('products', AdminProduct::class);
-    Route::delete('/products/image/{image}', [AdminProduct::class, 'deleteImage'])->name('products.delete-image');
-    Route::post('/products/image/{image}/primary', [AdminProduct::class, 'setPrimaryImage'])->name('products.set-primary');
+        Route::prefix('commissions')->name('commissions.')->group(function () {
+            Route::get('/', [AdminCommission::class, 'index'])->name('index');
+            Route::get('/{commission}', [AdminCommission::class, 'show'])->name('show');
+            Route::patch('/{commission}/status', [AdminCommission::class, 'updateStatus'])->name('status');
+        });
 
-    // ──────────────────────────────────────────────────────────────────────
-    // ORDERS
-    // ──────────────────────────────────────────────────────────────────────
-    Route::get('/orders', [AdminOrder::class, 'index'])->name('orders.index');
-    Route::get('/orders/{order}', [AdminOrder::class, 'show'])->name('orders.show');
-    Route::put('/orders/{order}/status', [AdminOrder::class, 'updateStatus'])->name('orders.update-status');
-    Route::post('/orders/{order}/confirm', [AdminOrder::class, 'confirmPayment'])->name('orders.confirm');
-
-    // ──────────────────────────────────────────────────────────────────────
-    // USERS
-    // ──────────────────────────────────────────────────────────────────────
-    Route::prefix('users')->name('users.')->group(function () {
-        Route::get('/', [AdminUser::class, 'index'])->name('index');
-        Route::get('/{user}', [AdminUser::class, 'show'])->name('show');
-        Route::put('/{user}', [AdminUser::class, 'update'])->name('update');
-        Route::delete('/{user}', [AdminUser::class, 'destroy'])->name('destroy');
-        Route::patch('/{user}/role', [AdminUser::class, 'updateRole'])->name('role');
+        Route::prefix('reviews')->name('reviews.')->group(function () {
+            Route::get('/', [AdminReview::class, 'index'])->name('index');
+            Route::patch('/{review}/approve', [AdminReview::class, 'toggleApprove'])->name('approve');
+            Route::delete('/{review}', [AdminReview::class, 'destroy'])->name('destroy');
+        });
     });
-
-    // ──────────────────────────────────────────────────────────────────────
-    // COMMISSIONS
-    // ──────────────────────────────────────────────────────────────────────
-    Route::prefix('commissions')->name('commissions.')->group(function () {
-        Route::get('/', [AdminCommission::class, 'index'])->name('index');
-        Route::get('/{commission}', [AdminCommission::class, 'show'])->name('show');
-        Route::patch('/{commission}/status', [AdminCommission::class, 'updateStatus'])->name('status');
-    });
-
-    // ──────────────────────────────────────────────────────────────────────
-    // REVIEWS
-    // ──────────────────────────────────────────────────────────────────────
-    Route::prefix('reviews')->name('reviews.')->group(function () {
-        Route::get('/', [AdminReview::class, 'index'])->name('index');
-        Route::patch('/{review}/approve', [AdminReview::class, 'toggleApprove'])->name('approve');
-        Route::delete('/{review}', [AdminReview::class, 'destroy'])->name('destroy');
-    });
-});
 
 /*
 |==========================================================================
-| CEK ONGKIR PAGE (Testing / Kampus)
+| TEST ROUTES (Untuk Debug)
 |==========================================================================
 */
-Route::get('/cek-ongkir', function () {
-    return view('ongkir');
-})->name('cek-ongkir');
-
-Route::get('/list-ongkir', function () {
-    $response = Http::withHeaders([
-        'key' => env('RAJAONGKIR_API_KEY')
-    ])->get('https://rajaongkir.komerce.id/api/v1/destination/province');
-    
-    return $response->json();
-})->name('list-ongkir');
-
-Route::get('/test-shipping', function () {
-    return view('test-shipping');
-})->name('test.shipping');
-
-Route::get('/test-raja-status', function () {
+Route::get('/test-ongkir-final', function () {
     $apiKey = env('RAJAONGKIR_API_KEY');
-    $baseUrl = 'https://rajaongkir.komerce.id/api/v1';
     
-    try {
-        $response = Http::timeout(10)
-            ->withHeaders(['key' => $apiKey])
-            ->get($baseUrl . '/destination/province');
-        
-        return response()->json([
-            'status' => $response->status(),
-            'success' => $response->successful(),
-            'message' => $response->successful() ? 'API OK' : 'API Error',
-            'data' => $response->json()
+    $response = Http::timeout(15)
+        ->asForm()
+        ->withHeaders(['key' => $apiKey])
+        ->post('https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', [
+            'origin' => 17473,
+            'destination' => 17473,
+            'weight' => 1000,
+            'courier' => 'jne',
+            'price' => 'lowest'
         ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 500,
-            'success' => false,
-            'message' => $e->getMessage()
+    
+    $data = $response->json();
+    
+    if (isset($data['data']) && is_array($data['data'])) {
+        $costs = [];
+        foreach ($data['data'] as $item) {
+            $costs[] = [
+                'service' => $item['service'],
+                'description' => $item['description'],
+                'cost' => $item['cost'],
+                'etd' => $item['etd']
+            ];
+        }
+        return response()->json($costs);
+    }
+    
+    return response()->json($data);
+});
+
+Route::get('/test-midtrans', function () {
+    $serverKey = config('midtrans.server_key');
+    
+    return response()->json([
+        'server_key_exists' => !empty($serverKey),
+        'server_key_prefix' => !empty($serverKey) ? substr($serverKey, 0, 15) . '...' : 'null',
+        'is_sandbox_format' => !empty($serverKey) && str_starts_with($serverKey, 'SB-Mid-server-'),
+        'client_key_exists' => !empty(config('midtrans.client_key')),
+    ]);
+});
+
+Route::get('/test-callback-manual/{orderCode}', function ($orderCode) {
+    $order = \App\Models\Order::where('order_code', $orderCode)->first();
+    
+    if (!$order) {
+        
+        return response()->json(['error' => 'Order not found']);
+    }
+    
+    $order->update(['status' => 'paid']);
+    
+    $payment = \App\Models\Payment::where('order_id', $order->id)->first();
+    if ($payment) {
+        $payment->update([
+            'status' => 'paid',
+            'paid_at' => now(),
         ]);
     }
+    
+    return response()->json([
+        'success' => true,
+        'order_code' => $order->order_code,
+        'status' => $order->status
+    ]);
 });
