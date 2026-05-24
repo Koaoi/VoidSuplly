@@ -18,9 +18,17 @@ return [
     ],
 
     // config/services.php — tambahkan di dalam array return
-    'rajaongkir' => [
-    'api_key'  => env('RAJAONGKIR_API_KEY'),
-    'base_url' => env('RAJAONGKIR_BASE_URL', 'https://rajaongkir.komerce.id/api/v1/'),
-    'origin'   => env('RAJAONGKIR_ORIGIN_CITY_ID', '501'), // 501 = Surabaya, ganti sesuai kota toko
+// ... konfigurasi service lain (mailgun, ses, dll)
+
+'rajaongkir' => [
+        'api_key' => env('RAJAONGKIR_API_KEY'),
+        'base_url' => env('RAJAONGKIR_BASE_URL', 'https://api.komerce.id/v1'),
+        'origin_subdistrict' => env('RAJAONGKIR_ORIGIN_SUBDISTRICT', '6521'),
+    ],
+
+    'midtrans' => [
+    'server_key' => env('MIDTRANS_SERVER_KEY'),
+    'client_key' => env('MIDTRANS_CLIENT_KEY'),
+    'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
 ],
 ];

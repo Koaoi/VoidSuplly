@@ -32,35 +32,41 @@
             </div>
 
             @php
-                $colorMap = [
-                    'pending'    => 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400',
-                    'paid'       => 'bg-blue-500/10 border-blue-500/30 text-blue-400',
-                    'processing' => 'bg-purple-500/10 border-purple-500/30 text-purple-400',
-                    'shipped'    => 'bg-orange-500/10 border-orange-500/30 text-orange-400',
-                    'completed'  => 'bg-green-500/10 border-green-500/30 text-green-400',
-                    'cancelled'  => 'bg-red-500/10 border-red-500/30 text-red-400',
+                $statusLabels = [
+                    'pending'    => 'Menunggu Pembayaran',
+                    'paid'       => 'Pembayaran Dikonfirmasi',
+                    'processing' => 'Sedang Diproses',
+                    'shipped'    => 'Sedang Dikirim',
+                    'completed'  => 'Pesanan Selesai',
+                    'cancelled'  => 'Dibatalkan',
                 ];
-                $badgeClass = $colorMap[$order->status] ?? 'bg-void-muted/30 border-void-border text-void-gray';
             @endphp
             <span class="inline-flex items-center text-xs font-bold tracking-widest
-                         uppercase border px-4 py-2 rounded-full {{ $badgeClass }}">
-                {{ $order->status_label }}
+                         uppercase border border-void-border px-4 py-2 rounded-full text-void-white">
+                {{ $statusLabels[$order->status] ?? ucfirst($order->status) }}
             </span>
         </div>
 
-        {{-- ── Status Tracker ───────────────────────────────────────── --}}
+        {{-- ── Status Tracker (Semua Putih) ───────────────────────── --}}
         @if($order->status !== 'cancelled')
             @php
                 $steps = ['pending', 'paid', 'processing', 'shipped', 'completed'];
                 $stepLabels = [
-                    'pending'    => ['Menunggu Bayar', 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
-                    'paid'       => ['Dikonfirmasi',   'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
-                    'processing' => ['Diproses',       'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'],
-                    'shipped'    => ['Dikirim',        'M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0'],
-                    'completed'  => ['Selesai',        'M5 13l4 4L19 7'],
+                    'pending'    => 'Menunggu Bayar',
+                    'paid'       => 'Dikonfirmasi',
+                    'processing' => 'Diproses',
+                    'shipped'    => 'Dikirim',
+                    'completed'  => 'Selesai',
                 ];
                 $currentIdx = array_search($order->status, $steps);
                 $currentIdx = $currentIdx === false ? 0 : $currentIdx;
+                
+                // Hitung estimasi tanggal sampai
+                $estimatedArrival = null;
+                if ($order->shippingAddress && $order->shippingAddress->estimated_days && $order->status === 'shipped') {
+                    $shippedDate = $order->updated_at ?? $order->created_at;
+                    $estimatedArrival = $shippedDate->copy()->addDays((int)$order->shippingAddress->estimated_days);
+                }
             @endphp
 
             <div class="bg-void-card border border-void-border rounded-2xl p-6 mb-6">
@@ -70,7 +76,8 @@
                 <div class="relative">
                     {{-- Background line --}}
                     <div class="absolute top-4 left-4 right-4 h-0.5 bg-void-border"></div>
-                    {{-- Active line --}}
+                    
+                    {{-- Active line (warna putih) --}}
                     <div class="absolute top-4 left-4 h-0.5 bg-white transition-all duration-700"
                          style="width: {{ $currentIdx > 0 ? min(($currentIdx / (count($steps) - 1)) * 100, 100) : 0 }}%">
                     </div>
@@ -83,20 +90,47 @@
                                 <div class="relative z-10 w-8 h-8 rounded-full border-2 flex items-center
                                             justify-center transition-all duration-500
                                             {{ $done ? 'bg-white border-white' : 'bg-void-dark border-void-border' }}">
-                                    <svg class="w-4 h-4 {{ $done ? 'text-black' : 'text-void-muted' }}"
-                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                              stroke-width="1.5" d="{{ $stepLabels[$step][1] }}"/>
-                                    </svg>
+                                    @if($done)
+                                        <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                  stroke-width="2" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    @else
+                                        <div class="w-2 h-2 rounded-full bg-void-muted"></div>
+                                    @endif
                                 </div>
                                 <span class="text-[9px] font-semibold text-center leading-tight uppercase
                                              tracking-wide {{ $done ? 'text-void-white' : 'text-void-muted' }}">
-                                    {{ $stepLabels[$step][0] }}
+                                    {{ $stepLabels[$step] }}
                                 </span>
                             </div>
                         @endforeach
                     </div>
                 </div>
+
+                {{-- Estimasi Kedatangan (untuk status shipped) --}}
+                @if($order->status === 'shipped' && $estimatedArrival)
+                    <div class="mt-6 pt-4 border-t border-void-border flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-void-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                            <div>
+                                <p class="text-xs text-void-gray">Estimasi Tiba</p>
+                                <p class="text-sm font-bold text-void-white">
+                                    {{ $estimatedArrival->format('d F Y') }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-void-gray">Estimasi Hari Kerja</p>
+                            <p class="text-sm font-bold text-void-white">
+                                {{ $order->shippingAddress->estimated_days }} hari kerja
+                            </p>
+                        </div>
+                    </div>
+                @endif
             </div>
         @else
             <div class="bg-red-500/10 border border-red-500/30 rounded-2xl p-5 mb-6">
@@ -110,7 +144,34 @@
             </div>
         @endif
 
-        {{-- ── Aksi Cepat (Bayar jika pending) ────────────────────── --}}
+        {{-- ── PESANAN SELESAI (untuk status completed) ───────────────────────── --}}
+        @if($order->status === 'completed')
+            <div class="bg-green-500/10 border border-green-500/30 rounded-2xl p-5 mb-6">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center shrink-0">
+                            <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-green-400">Pesanan Selesai ✓</p>
+                            <p class="text-xs text-void-gray mt-0.5">
+                                Terima kasih telah berbelanja di VOID Supply!
+                            </p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] text-void-gray">Tanggal Selesai</p>
+                        <p class="text-sm font-bold text-green-400">
+                            {{ $order->updated_at->format('d F Y, H:i') }} WIB
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- ── Aksi Cepat (Bayar jika pending) ───────────────────────── --}}
         @if($order->status === 'pending')
             <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-5 mb-6">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -180,7 +241,7 @@
                     </div>
 
                     {{-- Totals --}}
-                    <div class="px-5 py-4 border-t border-void-border bg-void-darker space-y-2.5">
+                    <div class="px-5 py-4 border-t border-void-border bg-void-dark/30 space-y-2.5">
                         <div class="flex justify-between text-sm">
                             <span class="text-void-gray">Subtotal Produk</span>
                             <span class="text-void-light">
@@ -362,16 +423,8 @@
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-void-gray">Status</span>
-                                @php
-                                    $pStatusColor = [
-                                        'paid'    => 'text-green-400',
-                                        'pending' => 'text-yellow-400',
-                                        'unpaid'  => 'text-void-gray',
-                                        'failed'  => 'text-red-400',
-                                    ][$order->payment->status] ?? 'text-void-gray';
-                                @endphp
-                                <span class="font-bold capitalize {{ $pStatusColor }}">
-                                    {{ $order->payment->status }}
+                                <span class="font-bold capitalize text-void-white">
+                                    {{ $order->payment->status === 'paid' ? 'Lunas' : ($order->payment->status === 'pending' ? 'Menunggu Verifikasi' : $order->payment->status) }}
                                 </span>
                             </div>
                             <div class="flex justify-between items-center">

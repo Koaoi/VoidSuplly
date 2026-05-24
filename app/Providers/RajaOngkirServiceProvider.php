@@ -3,14 +3,20 @@
 
 namespace App\Providers;
 
+use App\Services\RajaOngkirService;
 use Illuminate\Support\ServiceProvider;
 
 class RajaOngkirServiceProvider extends ServiceProvider
 {
-    public function register()
+    public function register(): void
     {
-        $this->app->bind('rajaongkir', function () {
-            return new \App\Http\Controllers\RajaOngkirController();
+        $this->app->singleton(RajaOngkirService::class, function ($app) {
+            return new RajaOngkirService();
         });
+    }
+
+    public function boot(): void
+    {
+        //
     }
 }

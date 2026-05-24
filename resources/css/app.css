@@ -85,3 +85,24 @@
         @apply text-[10px] font-bold tracking-widest bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2.5 py-0.5 rounded-full uppercase;
     }
 }
+
+select {
+    min-height: 45px !important;
+}
+
+select[size] {
+    min-height: auto !important;
+}
+
+/* Memperbesar area dropdown saat diklik */
+select:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+/* Memastikan option terlihat */
+select option {
+    display: block !important;
+    min-height: 35px !important;
+    padding: 8px 12px !important;
+}
