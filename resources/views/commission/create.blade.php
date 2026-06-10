@@ -1,263 +1,177 @@
 @extends('layouts.app')
 
-@section('title', 'Buat Commission Request')
+@section('title', 'Buat Commission Request - VOID Supply')
 
 @section('content')
 <div class="pt-24 pb-16">
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {{-- Header --}}
-        <div class="mb-8">
-            <a href="{{ route('commission.index') }}"
-               class="inline-flex items-center gap-2 text-xs text-void-gray hover:text-void-accent
-                      transition-colors mb-5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/>
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/30
+                        flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                 </svg>
-                Kembali
-            </a>
-            <p class="text-[10px] font-bold tracking-[0.3em] text-void-gray uppercase mb-2">— Custom Order</p>
-            <h1 class="text-3xl font-black text-void-accent">Commission Request</h1>
-            <p class="text-void-gray text-sm mt-2 leading-relaxed">
-                Ceritakan ide desainmu secara detail. Tim VOID Supply akan review dan
-                memberikan estimasi harga dalam 1–2 hari kerja.
-            </p>
+            </div>
+            <h1 class="text-2xl font-black text-void-white">Buat Commission Request</h1>
+            <p class="text-void-gray text-sm mt-2">Isi detail desain yang ingin kamu wujudkan</p>
         </div>
 
-        {{-- How it works --}}
-        <div class="grid grid-cols-3 gap-3 mb-8">
-            @foreach([
-                ['01', 'Submit Request', 'Isi form dengan detail lengkap'],
-                ['02', 'Review & Quote', 'Kami review dan beri estimasi'],
-                ['03', 'Produksi',       'Dikerjakan & dikirim ke kamu'],
-            ] as [$num, $title, $desc])
-                <div class="bg-void-card border border-void-border rounded-xl p-4 text-center">
-                    <p class="text-2xl font-black text-void-muted mb-2">{{ $num }}</p>
-                    <p class="text-xs font-bold text-void-white">{{ $title }}</p>
-                    <p class="text-[10px] text-void-gray mt-1 leading-relaxed">{{ $desc }}</p>
-                </div>
-            @endforeach
-        </div>
+        <div class="bg-void-card border border-void-border rounded-2xl p-6">
+            <form action="{{ route('commission.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
 
-        {{-- Form --}}
-        <form method="POST" action="{{ route('commission.store') }}"
-              enctype="multipart/form-data"
-              x-data="{
-                  charCount: 0,
-                  previewUrl: null,
-                  fileName: '',
-                  dragover: false,
-
-                  handleFile(file) {
-                      if (!file || !file.type.startsWith('image/')) return;
-                      this.fileName = file.name;
-                      const reader = new FileReader();
-                      reader.onload = e => this.previewUrl = e.target.result;
-                      reader.readAsDataURL(file);
-                  }
-              }"
-              class="space-y-6"
-        >
-            @csrf
-
-            {{-- Card: Informasi Dasar --}}
-            <div class="bg-void-card border border-void-border rounded-2xl p-6 space-y-5">
-                <h2 class="text-sm font-bold text-void-white uppercase tracking-wider">
-                    Informasi Dasar
-                </h2>
-
-                {{-- Judul --}}
-                <div>
-                    <label class="block text-xs font-semibold text-void-light uppercase tracking-wider mb-2">
-                        Judul Commission *
+                <div class="mb-5">
+                    <label class="block text-xs font-bold text-void-white uppercase tracking-wider mb-2">
+                        Judul Commission <span class="text-red-400">*</span>
                     </label>
-                    <input type="text" name="title"
-                           value="{{ old('title') }}"
-                           class="input-void @error('title') border-red-500/50 @enderror"
-                           placeholder="Contoh: Custom Hoodie Streetwear Logo Minimalis">
+                    <input type="text" name="title" value="{{ old('title') }}"
+                           class="input-void w-full @error('title') border-red-500 @enderror"
+                           placeholder="Contoh: Desain Hoodie Streetwear Premium" required>
                     @error('title')
-                        <p class="text-xs text-red-400 mt-1.5">{{ $message }}</p>
+                        <p class="text-xs text-red-400 mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- Tipe Produk --}}
-                <div>
-                    <label class="block text-xs font-semibold text-void-light uppercase tracking-wider mb-3">
-                        Tipe Produk *
+                <div class="mb-5">
+                    <label class="block text-xs font-bold text-void-white uppercase tracking-wider mb-2">
+                        Tipe Produk <span class="text-red-400">*</span>
                     </label>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        @foreach($productTypes as $value => $label)
-                            <label class="cursor-pointer">
-                                <input type="radio" name="product_type" value="{{ $value }}"
-                                       {{ old('product_type') === $value ? 'checked' : '' }}
-                                       class="sr-only peer">
-                                <div class="flex items-center justify-center px-3 py-2.5 rounded-xl
-                                            border-2 border-void-border text-xs font-semibold text-void-gray
-                                            peer-checked:border-void-accent peer-checked:text-void-accent
-                                            peer-checked:bg-void-muted/20 hover:border-void-muted
-                                            hover:text-void-light transition-all text-center">
-                                    {{ $label }}
-                                </div>
-                            </label>
+                    <select name="product_type" class="select-void w-full @error('product_type') border-red-500 @enderror" required>
+                        <option value="">Pilih tipe produk</option>
+                        @foreach($productTypes as $key => $label)
+                            <option value="{{ $key }}" {{ old('product_type') == $key ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
-                    </div>
+                    </select>
                     @error('product_type')
-                        <p class="text-xs text-red-400 mt-1.5">{{ $message }}</p>
+                        <p class="text-xs text-red-400 mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- Jumlah + Budget --}}
-                <div class="grid grid-cols-2 gap-4">
+                <div class="mb-5">
+                    <label class="block text-xs font-bold text-void-white uppercase tracking-wider mb-2">
+                        Deskripsi Desain <span class="text-red-400">*</span>
+                    </label>
+                    <textarea name="description" rows="6"
+                              class="textarea-void w-full @error('description') border-red-500 @enderror"
+                              placeholder="Jelaskan detail desain yang kamu inginkan...&#10;&#10;Contoh:&#10;- Warna: Hitam dengan aksen merah&#10;- Motif: Grafis abstrak di bagian dada&#10;- Bahan: Cotton combed 30s&#10;- Referensi style: Streetwear Jepang"
+                              required>{{ old('description') }}</textarea>
+                    <p class="text-[10px] text-void-muted mt-1">Minimal 30 karakter. Semakin detail, semakin baik.</p>
+                    @error('description')
+                        <p class="text-xs text-red-400 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-5">
                     <div>
-                        <label class="block text-xs font-semibold text-void-light uppercase tracking-wider mb-2">
-                            Jumlah (pcs) *
+                        <label class="block text-xs font-bold text-void-white uppercase tracking-wider mb-2">
+                            Jumlah <span class="text-red-400">*</span>
                         </label>
-                        <input type="number" name="quantity" min="1" max="100"
-                               value="{{ old('quantity', 1) }}"
-                               class="input-void @error('quantity') border-red-500/50 @enderror">
+                        <input type="number" name="quantity" value="{{ old('quantity', 1) }}"
+                               class="input-void w-full @error('quantity') border-red-500 @enderror"
+                               min="1" max="100" required>
+                        <p class="text-[10px] text-void-muted mt-1">Maksimal 100 pcs</p>
                         @error('quantity')
-                            <p class="text-xs text-red-400 mt-1.5">{{ $message }}</p>
+                            <p class="text-xs text-red-400 mt-1">{{ $message }}</p>
                         @enderror
                     </div>
+
                     <div>
-                        <label class="block text-xs font-semibold text-void-light uppercase tracking-wider mb-2">
-                            Budget (Rp) <span class="text-void-muted normal-case font-normal">opsional</span>
+                        <label class="block text-xs font-bold text-void-white uppercase tracking-wider mb-2">
+                            Budget (Opsional)
                         </label>
-                        <input type="number" name="budget" min="0"
-                               value="{{ old('budget') }}"
-                               class="input-void"
-                               placeholder="500000">
-                        <p class="text-[10px] text-void-muted mt-1">Kosongkan jika belum ada estimasi</p>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-void-gray text-sm">Rp</span>
+                            <input type="number" name="budget" value="{{ old('budget') }}"
+                                   class="input-void w-full pl-10 @error('budget') border-red-500 @enderror"
+                                   min="0" placeholder="Estimasi budget">
+                        </div>
+                        <p class="text-[10px] text-void-muted mt-1">Estimasi budget agar tim bisa memberikan quote yang sesuai</p>
+                        @error('budget')
+                            <p class="text-xs text-red-400 mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
-            </div>
 
-            {{-- Card: Deskripsi --}}
-            <div class="bg-void-card border border-void-border rounded-2xl p-6">
-                <h2 class="text-sm font-bold text-void-white uppercase tracking-wider mb-5">
-                    Deskripsi Detail
-                </h2>
-
-                <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="text-xs font-semibold text-void-light uppercase tracking-wider">
-                            Deskripsi Desain *
-                        </label>
-                        <span class="text-[10px] text-void-gray" x-text="charCount + ' / 2000 karakter'"></span>
-                    </div>
-                    <textarea name="description" rows="8"
-                              @input="charCount = $el.value.length"
-                              class="input-void resize-none @error('description') border-red-500/50 @enderror"
-                              placeholder="Ceritakan detail desainmu:
-- Konsep dan tema desain
-- Warna yang diinginkan (background, text, elemen)
-- Font atau tipografi yang disukai
-- Posisi print/bordir (dada, punggung, lengan)
-- Referensi brand atau style yang menginspirasi
-- Ukuran yang dibutuhkan
-- Deadline jika ada">{{ old('description') }}</textarea>
-                    @error('description')
-                        <p class="text-xs text-red-400 mt-1.5">{{ $message }}</p>
-                    @enderror
-                    <p class="text-[10px] text-void-muted mt-1">Minimal 30 karakter. Semakin detail semakin baik.</p>
-                </div>
-            </div>
-
-            {{-- Card: Referensi Gambar --}}
-            <div class="bg-void-card border border-void-border rounded-2xl p-6">
-                <h2 class="text-sm font-bold text-void-white uppercase tracking-wider mb-2">
-                    Gambar Referensi
-                    <span class="text-void-muted text-xs font-normal normal-case ml-1">(opsional)</span>
-                </h2>
-                <p class="text-xs text-void-gray mb-5">
-                    Upload mockup, sketsa, atau gambar referensi yang membantu menjelaskan desainmu.
-                    Format: JPG, PNG, WEBP — maks. 5MB.
-                </p>
-
-                {{-- Drop zone --}}
-                <label
-                    class="relative block cursor-pointer"
-                    @dragover.prevent="dragover = true"
-                    @dragleave="dragover = false"
-                    @drop.prevent="dragover = false; handleFile($event.dataTransfer.files[0])"
-                >
-                    <input type="file" name="reference_image"
-                           accept="image/jpg,image/jpeg,image/png,image/webp"
-                           class="sr-only"
-                           @change="handleFile($event.target.files[0])">
-
-                    {{-- Preview state --}}
-                    <template x-if="previewUrl">
-                        <div class="relative rounded-2xl overflow-hidden border-2 border-void-border
-                                    group hover:border-void-muted transition-colors">
-                            <img :src="previewUrl"
-                                 class="w-full max-h-64 object-contain bg-void-dark">
-                            <div class="absolute inset-0 bg-void-black/50 opacity-0 group-hover:opacity-100
-                                        transition-opacity flex items-center justify-center">
-                                <div class="text-center">
-                                    <svg class="w-8 h-8 text-void-white mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                    </svg>
-                                    <p class="text-xs text-void-white font-medium">Klik untuk ganti gambar</p>
-                                </div>
-                            </div>
-                            <div class="absolute bottom-3 left-3 bg-void-black/70 rounded-lg px-2 py-1">
-                                <p class="text-[10px] text-void-white" x-text="fileName"></p>
-                            </div>
-                        </div>
-                    </template>
-
-                    {{-- Empty state --}}
-                    <template x-if="!previewUrl">
-                        <div :class="dragover ? 'border-void-accent bg-void-muted/10' : 'border-void-border'"
-                             class="border-2 border-dashed rounded-2xl p-12 text-center
-                                    hover:border-void-muted hover:bg-void-dark/30 transition-all">
-                            <svg class="w-12 h-12 text-void-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
-                                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                            </svg>
-                            <p class="text-sm font-medium text-void-light mb-1">
-                                Drag & drop atau klik untuk upload
-                            </p>
-                            <p class="text-xs text-void-gray">
-                                JPG, PNG, WEBP — maks. 5MB
-                            </p>
-                        </div>
-                    </template>
-                </label>
-
-                @error('reference_image')
-                    <p class="text-xs text-red-400 mt-2">{{ $message }}</p>
-                @enderror
-            </div>
-
-            {{-- Terms & Submit --}}
-            <div class="bg-void-card border border-void-border rounded-2xl p-6">
-                <div class="flex items-start gap-3 mb-5">
-                    <input type="checkbox" id="terms" required
-                           class="w-4 h-4 mt-0.5 rounded border-void-border bg-void-dark
-                                  text-void-accent focus:ring-0 shrink-0 cursor-pointer">
-                    <label for="terms" class="text-sm text-void-gray leading-relaxed cursor-pointer">
-                        Saya mengerti bahwa commission request ini akan direview oleh tim VOID Supply.
-                        Harga final akan dikomunikasikan via platform ini sebelum produksi dimulai.
-                        Pembayaran dilakukan setelah quote disetujui.
+                <div class="mb-5">
+                    <label class="block text-xs font-bold text-void-white uppercase tracking-wider mb-2">
+                        Gambar Referensi (Opsional)
                     </label>
+                    <div class="border-2 border-dashed border-void-border rounded-xl p-6 text-center hover:border-void-accent transition-colors cursor-pointer"
+                         onclick="document.getElementById('reference_image').click()">
+                        <svg class="w-10 h-10 text-void-muted mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
+                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <p class="text-sm text-void-gray">Klik untuk upload gambar referensi</p>
+                        <p class="text-[10px] text-void-muted mt-1">Format: JPG, PNG, WEBP (Maks 5MB)</p>
+                        <div id="image-preview" class="mt-3 hidden">
+                            <img id="preview-img" class="max-h-40 mx-auto rounded-lg">
+                        </div>
+                    </div>
+                    <input type="file" name="reference_image" id="reference_image" 
+                           class="hidden" accept="image/jpeg,image/png,image/webp">
+                    @error('reference_image')
+                        <p class="text-xs text-red-400 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="bg-void-dark border border-void-border rounded-xl p-4 mb-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg class="w-4 h-4 text-void-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p class="text-xs font-bold text-void-white uppercase tracking-wider">Informasi</p>
+                    </div>
+                    <ul class="text-xs text-void-gray space-y-1 ml-6 list-disc">
+                        <li>Tim VOID Supply akan merespon dalam 1x24 jam</li>
+                        <li>Quote harga akan diberikan setelah tim melihat detail desain</li>
+                        <li>Commission hanya akan diproses setelah pembayaran lunas</li>
+                        <li>Estimasi pengerjaan 14-21 hari setelah payment dikonfirmasi</li>
+                    </ul>
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-3">
-                    <button type="submit" class="btn-primary flex-1 py-3.5 text-sm flex items-center justify-center gap-2">
+                    <button type="submit" class="btn-primary flex-1 py-3 flex items-center justify-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                         </svg>
-                        Kirim Commission Request
+                        Kirim Request
                     </button>
-                    <a href="{{ route('commission.index') }}" class="btn-secondary flex-1 py-3.5 text-sm text-center">
+                    <a href="{{ route('commission.index') }}" class="btn-secondary flex-1 text-center py-3">
                         Batal
                     </a>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
+
+        <div class="mt-6 text-center">
+            <a href="{{ route('commission.index') }}" class="text-sm text-void-gray hover:text-void-accent transition-colors inline-flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Kembali ke Daftar Commission
+            </a>
+        </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    document.getElementById('reference_image').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const preview = document.getElementById('preview-img');
+                preview.src = event.target.result;
+                document.getElementById('image-preview').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+</script>
+@endpush
 @endsection

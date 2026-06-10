@@ -395,8 +395,7 @@
 
                     <button type="submit"
                             :disabled="state.submitting"
-                            class="w-full mt-6 py-3.5 rounded-xl text-sm font-bold
-                                   bg-white text-black hover:bg-void-light
+                            class="btn-primary w-full mt-6 py-3.5 text-center font-bold text-base
                                    disabled:opacity-50 disabled:cursor-not-allowed
                                    transition-all duration-200 flex items-center justify-center gap-2">
                         <span x-show="!state.submitting">Buat Pesanan →</span>
@@ -428,7 +427,6 @@
 <script>
 function checkoutApp() {
     return {
-        // Form Data
         form: {
             province_name: '',
             city_name: '',
@@ -439,7 +437,6 @@ function checkoutApp() {
             etd: '',
         },
 
-        // Subdistrict Search Data
         subdistrict: {
             query: '',
             results: [],
@@ -451,10 +448,8 @@ function checkoutApp() {
             highlightIndex: -1,
         },
 
-        // Shipping Options
         shippingOptions: [],
 
-        // UI State
         state: {
             loadingProvinces: false,
             loadingCost: false,
@@ -462,32 +457,23 @@ function checkoutApp() {
             submitting: false,
         },
 
-        // Toast
         toast: {
             show: false,
             type: 'error',
             message: '',
         },
 
-        // Cart Data
         cartWeight: {{ $cartWeight ?? 1000 }},
 
-        // ─────────────────────────────────────────────────────────────────────
-        // INIT
-        // ─────────────────────────────────────────────────────────────────────
         async init() {
             await this.loadProvinces();
             
-            // Set old values if exists
             const oldCityName = '{{ old("city_name") }}';
             if (oldCityName) {
                 this.form.city_name = oldCityName;
             }
         },
 
-        // ─────────────────────────────────────────────────────────────────────
-        // LOAD PROVINCES
-        // ─────────────────────────────────────────────────────────────────────
         async loadProvinces() {
             this.state.loadingProvinces = true;
             try {
@@ -506,7 +492,6 @@ function checkoutApp() {
                     select.appendChild(opt);
                 });
                 
-                // Set old value jika ada
                 const oldProvinceId = '{{ old("province_id") }}';
                 if (oldProvinceId) {
                     select.value = oldProvinceId;
@@ -522,16 +507,11 @@ function checkoutApp() {
             }
         },
 
-        // ─────────────────────────────────────────────────────────────────────
-        // EVENT HANDLERS
-        // ─────────────────────────────────────────────────────────────────────
         onProvinceChange(event) {
             const select = event.target;
             const selectedOpt = select.options[select.selectedIndex];
             
             this.form.province_name = selectedOpt?.getAttribute('data-name') || selectedOpt?.text || '';
-            
-            // Reset shipping when province changes
             this.resetShipping();
         },
 
@@ -550,9 +530,6 @@ function checkoutApp() {
             this.form.etd = opt.etd || '';
         },
 
-        // ─────────────────────────────────────────────────────────────────────
-        // SUBDISTRICT SEARCH
-        // ─────────────────────────────────────────────────────────────────────
         async searchSubdistrict() {
             if (this.subdistrict.query.length < 3) {
                 this.subdistrict.results = [];
@@ -590,16 +567,11 @@ function checkoutApp() {
             this.subdistrict.showDropdown = false;
             this.subdistrict.highlightIndex = -1;
 
-            // Extract city from label (format: "KRANJI, BEKASI BARAT, BEKASI, JAWA BARAT, 17135")
             const parts = item.label.split(', ');
             if (parts.length >= 3 && !this.form.city_name) {
-                // parts[0] = KRANJI (kecamatan)
-                // parts[1] = BEKASI BARAT (kota bagian)
-                // parts[2] = BEKASI (kota utama)
                 this.form.city_name = parts[2];
             }
 
-            // Auto-fill kode pos
             if (item.postal_code) {
                 this.subdistrict.selectedPostal = item.postal_code;
                 const postalInput = document.getElementById('input-postal');
@@ -608,7 +580,6 @@ function checkoutApp() {
                 }
             }
 
-            // Trigger ongkir calculation
             if (this.form.courier) {
                 this.calculateOngkir();
             }
@@ -635,9 +606,6 @@ function checkoutApp() {
             }
         },
 
-        // ─────────────────────────────────────────────────────────────────────
-        // CALCULATE ONGKIR
-        // ─────────────────────────────────────────────────────────────────────
         async calculateOngkir() {
             if (!this.canCalculate()) return;
 
@@ -666,9 +634,6 @@ function checkoutApp() {
             }
         },
 
-        // ─────────────────────────────────────────────────────────────────────
-        // VALIDATION
-        // ─────────────────────────────────────────────────────────────────────
         canCalculate() {
             return !!this.subdistrict.selectedId && !!this.form.courier;
         },
@@ -690,23 +655,9 @@ function checkoutApp() {
             return '';
         },
 
-        // ─────────────────────────────────────────────────────────────────────
-        // SUBMIT
-        // ─────────────────────────────────────────────────────────────────────
         handleSubmit() {
             const provinceSelect = document.getElementById('select-province');
             const provinceId = provinceSelect?.value;
-            
-            // Debug
-            console.log('=== HANDLE SUBMIT ===');
-            console.log('province_id:', provinceId);
-            console.log('province_name:', this.form.province_name);
-            console.log('city_name:', this.form.city_name);
-            console.log('subdistrict_id:', this.subdistrict.selectedId);
-            console.log('subdistrict_name:', this.subdistrict.selectedName);
-            console.log('courier:', this.form.courier);
-            console.log('service:', this.form.service);
-            console.log('shipping_cost:', this.form.shippingCost);
             
             if (!provinceId) {
                 this.showToast('Provinsi belum dipilih', 'error');
@@ -733,9 +684,6 @@ function checkoutApp() {
             document.getElementById('checkout-form').submit();
         },
 
-        // ─────────────────────────────────────────────────────────────────────
-        // HELPERS
-        // ─────────────────────────────────────────────────────────────────────
         resetShipping() {
             this.shippingOptions = [];
             this.state.costError = '';

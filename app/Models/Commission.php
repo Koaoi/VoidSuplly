@@ -4,53 +4,91 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Commission extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'user_id',
         'title',
-        'description',
-        'reference_image',
         'product_type',
-        'budget',
+        'description',
         'quantity',
+        'budget',
+        'quoted_price',
+        'reference_image',
         'status',
         'admin_note',
-        'quoted_price',
+        'order_id',
     ];
 
     protected $casts = [
-        'budget'       => 'decimal:2',
-        'quoted_price' => 'decimal:2',
+        'budget' => 'decimal:0',
+        'quoted_price' => 'decimal:0',
+        'quantity' => 'integer',
     ];
 
-    public static array $statusLabels = [
-        'pending'     => 'Menunggu Review',
-        'reviewing'   => 'Sedang Ditinjau',
-        'accepted'    => 'Diterima',
-        'in_progress' => 'Sedang Dikerjakan',
-        'rejected'    => 'Ditolak',
-        'completed'   => 'Selesai',
-    ];
-
-    public function getStatusLabelAttribute(): string
+    public function getStatusLabelAttribute()
     {
-        return self::$statusLabels[$this->status] ?? $this->status;
+        $labels = [
+            'pending' => 'Menunggu Review',
+            'reviewing' => 'Sedang Direview',
+            'accepted' => 'Disetujui',
+            'in_progress' => 'Pengerjaan',
+            'completed' => 'Selesai',
+            'rejected' => 'Ditolak',
+            'paid' => 'Dibayar',
+        ];
+        return $labels[$this->status] ?? ucfirst($this->status);
     }
 
-    public function getReferenceImageUrlAttribute(): ?string
+    public function getProductTypeLabelAttribute()
     {
-        return $this->reference_image
-            ? asset('storage/' . $this->reference_image)
-            : null;
+        $labels = [
+            'hoodie' => 'Hoodie',
+            'tshirt' => 'T-Shirt',
+            'jersey' => 'Jersey',
+            'jacket' => 'Jacket',
+            'pants' => 'Pants',
+            'totebag' => 'Tote Bag',
+            'other' => 'Lainnya',
+        ];
+        return $labels[$this->product_type] ?? ucfirst($this->product_type);
     }
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    public function getReferenceImageUrlAttribute()
+    {
+        if ($this->reference_image) {
+            return Storage::url($this->reference_image);
+        }
+        return null;
+    }
+
+    public function getFormattedQuotedPriceAttribute()
+    {
+        if ($this->quoted_price) {
+            return 'Rp ' . number_format($this->quoted_price, 0, ',', '.');
+        }
+        return '-';
+    }
+
+    public function getFormattedBudgetAttribute()
+    {
+        if ($this->budget) {
+            return 'Rp ' . number_format($this->budget, 0, ',', '.');
+        }
+        return '-';
     }
 }

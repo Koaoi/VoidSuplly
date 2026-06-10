@@ -82,7 +82,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::post('/product/{product}/notify', [ProductController::class, 'notifyMe'])->name('product.notify');
 
-    // Cart Routes
     Route::prefix('cart')->name('cart.')->group(function () {
         Route::get('/', [CartController::class, 'index'])->name('index');
         Route::post('/add', [CartController::class, 'add'])->name('add');
@@ -93,30 +92,25 @@ Route::middleware('auth')->group(function () {
         Route::get('/details', [CartController::class, 'details'])->name('details');
     });
 
-    // Wishlist Routes
     Route::prefix('wishlist')->name('wishlist.')->group(function () {
         Route::get('/', [WishlistController::class, 'index'])->name('index');
         Route::post('/toggle', [WishlistController::class, 'toggle'])->name('toggle');
         Route::get('/check/{product}', [WishlistController::class, 'check'])->name('check');
     });
 
-    // Checkout Routes
     Route::prefix('checkout')->name('checkout.')->group(function () {
         Route::get('/', [CheckoutController::class, 'index'])->name('index');
         Route::post('/process', [CheckoutController::class, 'process'])->name('process');
     });
 
-    // Order Routes
     Route::prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
         Route::get('/{code}', [OrderController::class, 'show'])->name('show');
     });
 
-    // Review Routes
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
 
-    // Commission Routes
     Route::prefix('commission')->name('commission.')->group(function () {
         Route::get('/', [CommissionController::class, 'index'])->name('index');
         Route::get('/create', [CommissionController::class, 'create'])->name('create');
@@ -125,7 +119,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{commission}', [CommissionController::class, 'destroy'])->name('destroy');
     });
 
-    // Profile Routes
     Route::prefix('profile')->name('profile.')->group(function () {
         Route::get('/', [ProfileController::class, 'index'])->name('index');
         Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
@@ -134,7 +127,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
     });
 
-    // Payment Routes (Digabung ke dalam satu middleware 'auth' agar lebih optimal)
     Route::prefix('payment')->name('payment.')->group(function () {
         Route::get('/{code}', [PaymentController::class, 'show'])->name('show');
         Route::post('/{code}/proof', [PaymentController::class, 'uploadProof'])->name('proof');
@@ -142,6 +134,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/{code}/callback-manual', [PaymentController::class, 'manualCallback'])->name('callback-manual');
     });
 });
+
+/*
+|==========================================================================
+| COMMISSION PROCESS PAYMENT ROUTE
+|==========================================================================
+*/
+Route::post('/commission/{commission}/process-payment', [CommissionController::class, 'processPayment'])->name('commission.process-payment');
 
 /*
 |==========================================================================
@@ -187,19 +186,20 @@ Route::middleware(['auth', 'isAdmin'])
 
 /*
 |==========================================================================
-| ADMIN REPORT ROUTES (Di luar group admin agar lebih rapi)
+| ADMIN REPORT ROUTES
 |==========================================================================
 */
 Route::middleware(['auth', 'isAdmin'])
     ->prefix('admin/reports')
     ->name('admin.reports.')
     ->group(function () {
-        Route::get('/', [App\Http\Controllers\Admin\ReportController::class, 'index'])->name('index');
-        Route::get('/sales', [App\Http\Controllers\Admin\ReportController::class, 'sales'])->name('sales');
-        Route::get('/products', [App\Http\Controllers\Admin\ReportController::class, 'products'])->name('products');
-        Route::get('/print-sales', [App\Http\Controllers\Admin\ReportController::class, 'printSales'])->name('print-sales');
-        Route::get('/print-products', [App\Http\Controllers\Admin\ReportController::class, 'printProducts'])->name('print-products');
+        Route::get('/', [ReportController::class, 'index'])->name('index');
+        Route::get('/sales', [ReportController::class, 'sales'])->name('sales');
+        Route::get('/products', [ReportController::class, 'products'])->name('products');
+        Route::get('/print-sales', [ReportController::class, 'printSales'])->name('print-sales');
+        Route::get('/print-products', [ReportController::class, 'printProducts'])->name('print-products');
     });
+
 /*
 |==========================================================================
 | TEST ROUTES (Untuk Debug)
@@ -252,7 +252,6 @@ Route::get('/test-callback-manual/{orderCode}', function ($orderCode) {
     $order = \App\Models\Order::where('order_code', $orderCode)->first();
     
     if (!$order) {
-        
         return response()->json(['error' => 'Order not found']);
     }
     

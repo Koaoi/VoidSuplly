@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Commission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Midtrans\Config;
@@ -66,7 +67,7 @@ class PaymentController extends Controller
                     ],
                     'enabled_payments' => [
                         'bca_va', 'bni_va', 'bri_va', 'mandiri_va', 'cimb_va',
-                        'gopay', 'qris', 'shopeepay', 'alfamart', 'indomaret'
+                        'alfamart', 'indomaret'
                     ],
                     'item_details' => $this->getItemDetails($order),
                 ];
@@ -210,7 +211,7 @@ class PaymentController extends Controller
         $transactionStatus = $request->transaction_status;
         $fraudStatus = $request->fraud_status;
         $paymentType = $request->payment_type;
-        $transactionId = $request->transaction_id; // Ambil ID Transaksi dari Midtrans
+        $transactionId = $request->transaction_id;
 
         // Ambil record payment atau buat baru jika belum ada
         $payment = Payment::where('order_id', $order->id)->first();
@@ -241,7 +242,7 @@ class PaymentController extends Controller
             $paymentDetails['qr_code_url'] = $request->qr_code_url;
         }
 
-        // UPDATE SELURUH DATA KOLOM MIDTRANS DI SINI
+        // UPDATE DATA MIDTRANS
         $payment->update([
             'payment_details'         => json_encode($paymentDetails),
             'method'                  => $paymentType ?? $payment->method,
@@ -253,6 +254,14 @@ class PaymentController extends Controller
         if (($transactionStatus == 'capture' && $fraudStatus == 'accept') || $transactionStatus == 'settlement') {
             $order->update(['status' => 'paid']);
             $payment->update(['status' => 'paid', 'paid_at' => now()]);
+            
+            // 🔥 UPDATE COMMISSION STATUS JADI PAID
+            $commission = Commission::where('order_id', $order->id)->first();
+            if ($commission) {
+                $commission->update(['status' => 'paid']);
+                Log::info('✅ COMMISSION UPDATED TO PAID: ' . $commission->id);
+            }
+            
             Log::info('✅ PAYMENT SUCCESS for order: ' . $order->order_code);
         } 
         elseif ($transactionStatus == 'pending') {
@@ -284,7 +293,6 @@ class PaymentController extends Controller
         $order->update(['status' => 'paid']);
         $payment = Payment::where('order_id', $order->id)->first();
         
-        // Deteksi Metode Pembayaran dari Request Frontend
         $paymentMethod = $request->input('payment_method') ?? 
                          $request->input('payment_type') ?? 
                          $request->input('method') ?? 
@@ -292,7 +300,6 @@ class PaymentController extends Controller
                          
         $midtransTxId = $request->input('transaction_id') ?? null;
         
-        // Pengecekan jika data dibungkus dalam objek 'result'
         if ($request->has('result')) {
             $result = $request->input('result');
             $paymentMethod = $result['payment_type'] ?? $result['payment_method'] ?? $paymentMethod;
@@ -328,6 +335,12 @@ class PaymentController extends Controller
                 'midtrans_transaction_id' => $midtransTxId,
                 'payment_details'         => json_encode($request->all())
             ]);
+        }
+        
+        // Update commission jika ada
+        $commission = Commission::where('order_id', $order->id)->first();
+        if ($commission) {
+            $commission->update(['status' => 'paid']);
         }
         
         return response()->json([
@@ -392,7 +405,7 @@ class PaymentController extends Controller
             if ($method === 'indomaret') return ['indomaret'];
             return ['alfamart', 'indomaret'];
         }
-        return ['bca_va', 'bni_va', 'bri_va', 'mandiri_va', 'cimb_va', 'gopay', 'qris', 'shopeepay', 'alfamart', 'indomaret'];
+        return ['bca_va', 'bni_va', 'bri_va', 'mandiri_va', 'cimb_va', 'alfamart', 'indomaret'];
     }
 
     private function getItemDetails(Order $order): array
@@ -406,6 +419,17 @@ class PaymentController extends Controller
                 'name' => substr($item->product_name . ' (' . ($item->size ?? 'FREE') . ')', 0, 50),
             ];
         }
+        
+        // Untuk commission order (tanpa items)
+        if (empty($items) && $order->notes && str_contains($order->notes, 'Commission:')) {
+            $items[] = [
+                'id' => 'COMMISSION-' . $order->id,
+                'price' => (int) $order->total_price,
+                'quantity' => 1,
+                'name' => substr($order->notes, 0, 50),
+            ];
+        }
+        
         if ($order->shipping_cost > 0) {
             $items[] = [
                 'id' => 'SHIPPING',

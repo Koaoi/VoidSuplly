@@ -252,7 +252,7 @@
                         {{-- Pay Button --}}
                         <div class="mt-8">
                             <button id="pay-button" 
-                                    class="w-full py-3.5 rounded-xl text-sm font-bold bg-void-accent text-white hover:bg-void-accent/80 transition-all">
+                                    class="btn-primary w-full py-3.5 text-center font-bold text-base">
                                 Bayar Sekarang
                             </button>
                         </div>
