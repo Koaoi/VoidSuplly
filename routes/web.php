@@ -150,6 +150,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [ProfileController::class, 'index'])->name('index');
         Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
         Route::patch('/', [ProfileController::class, 'update'])->name('update');
+        Route::put('/update-phone', [ProfileController::class, 'updatePhone'])->name('update-phone');
         Route::put('/change-password', [ProfileController::class, 'changePassword'])->name('change-password');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
     });
@@ -172,18 +173,25 @@ Route::middleware(['auth', 'isAdmin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
+        // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        
+        // Categories
         Route::resource('categories', AdminCategory::class)->except(['show']);
+        
+        // Products
         Route::resource('products', AdminProduct::class);
         Route::delete('/products/image/{image}', [AdminProduct::class, 'deleteImage'])->name('products.delete-image');
         Route::post('/products/image/{image}/primary', [AdminProduct::class, 'setPrimaryImage'])->name('products.set-primary');
-
+        
+        // Orders
         Route::get('/orders', [AdminOrder::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [AdminOrder::class, 'show'])->name('orders.show');
         Route::put('/orders/{order}/status', [AdminOrder::class, 'updateStatus'])->name('orders.update-status');
         Route::post('/orders/{order}/confirm-payment', [AdminOrder::class, 'confirmPayment'])->name('orders.confirm-payment');
         Route::post('/orders/{order}/reject-payment', [AdminOrder::class, 'rejectPayment'])->name('orders.reject-payment');
-
+        
+        // Users
         Route::prefix('users')->name('users.')->group(function () {
             Route::get('/', [AdminUser::class, 'index'])->name('index');
             Route::get('/{user}', [AdminUser::class, 'show'])->name('show');
@@ -191,13 +199,15 @@ Route::middleware(['auth', 'isAdmin'])
             Route::delete('/{user}', [AdminUser::class, 'destroy'])->name('destroy');
             Route::patch('/{user}/role', [AdminUser::class, 'updateRole'])->name('role');
         });
-
+        
+        // Commissions
         Route::prefix('commissions')->name('commissions.')->group(function () {
             Route::get('/', [AdminCommission::class, 'index'])->name('index');
             Route::get('/{commission}', [AdminCommission::class, 'show'])->name('show');
             Route::patch('/{commission}/status', [AdminCommission::class, 'updateStatus'])->name('status');
         });
-
+        
+        // Reviews
         Route::prefix('reviews')->name('reviews.')->group(function () {
             Route::get('/', [AdminReview::class, 'index'])->name('index');
             Route::patch('/{review}/approve', [AdminReview::class, 'toggleApprove'])->name('approve');

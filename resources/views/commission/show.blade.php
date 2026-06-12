@@ -33,7 +33,6 @@
                 <div class="bg-void-card border border-void-border rounded-2xl overflow-hidden">
                     <div class="border-b border-void-border px-6 py-4 flex items-center justify-between">
                         <h2 class="font-bold text-void-white">Detail Commission</h2>
-                        {{-- Badge Status --}}
                         @php
                             $statusConfig = [
                                 'pending'     => ['Menunggu Review',   'bg-yellow-500/20 text-yellow-400'],
@@ -86,16 +85,35 @@
                     </div>
                 </div>
 
-                {{-- Referensi Gambar --}}
-                @if($commission->reference_image_url)
+                {{-- 🔥 REFERENSI GAMBAR (DIPERBAIKI) --}}
+                @if($commission->reference_image)
                     <div class="bg-void-card border border-void-border rounded-2xl overflow-hidden">
                         <div class="border-b border-void-border px-6 py-4">
                             <h3 class="font-bold text-void-white text-sm">Gambar Referensi</h3>
                         </div>
                         <div class="p-6">
-                            <img src="{{ $commission->reference_image_url }}"
-                                 alt="Referensi"
-                                 class="max-w-xs rounded-xl border border-void-border">
+                            <a href="{{ asset('storage/' . $commission->reference_image) }}" target="_blank" class="block">
+                                <img src="{{ asset('storage/' . $commission->reference_image) }}"
+                                     alt="Referensi desain"
+                                     class="max-h-64 rounded-xl border border-void-border object-contain mx-auto hover:opacity-90 transition-opacity cursor-zoom-in"
+                                     onerror="this.onerror=null; this.src='{{ asset('images/placeholder.jpg') }}';">
+                            </a>
+                            <p class="text-center text-xs text-void-gray mt-3">
+                                Klik gambar untuk memperbesar
+                            </p>
+                        </div>
+                    </div>
+                @else
+                    <div class="bg-void-card border border-void-border rounded-2xl overflow-hidden">
+                        <div class="border-b border-void-border px-6 py-4">
+                            <h3 class="font-bold text-void-white text-sm">Gambar Referensi</h3>
+                        </div>
+                        <div class="p-6 text-center">
+                            <svg class="w-12 h-12 text-void-muted mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <p class="text-sm text-void-gray">Tidak ada gambar referensi</p>
                         </div>
                     </div>
                 @endif
@@ -129,7 +147,6 @@
                 {{-- Panel Aksi berdasarkan status --}}
                 <div class="bg-void-card border border-void-border rounded-2xl p-6">
 
-                    {{-- STATUS: pending / reviewing --}}
                     @if(in_array($commission->status, ['pending', 'reviewing']))
                         <div class="text-center">
                             <div class="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center mx-auto mb-3">
@@ -141,7 +158,6 @@
                             <p class="text-xs text-void-gray">Tim kami sedang mereview commission kamu. Mohon tunggu ya!</p>
                         </div>
 
-                    {{-- STATUS: rejected --}}
                     @elseif($commission->status === 'rejected')
                         <div class="text-center">
                             <div class="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto mb-3">
@@ -153,7 +169,6 @@
                             <p class="text-xs text-void-gray">Maaf, commission ini tidak dapat kami proses.</p>
                         </div>
 
-                    {{-- STATUS: accepted — siap bayar atau lanjutkan --}}
                     @elseif($commission->status === 'accepted')
                         @php
                             $canPay = !$commission->order_id
@@ -183,7 +198,7 @@
                                 </form>
 
                                 <p class="text-xs text-void-muted mt-3">
-                                    Tersedia: Transfer Bank, QRIS, Minimarket
+                                    Tersedia: Transfer Bank, Minimarket
                                 </p>
                             </div>
 
@@ -204,7 +219,6 @@
                             </div>
                         @endif
 
-                    {{-- STATUS: in_progress / completed --}}
                     @elseif(in_array($commission->status, ['in_progress', 'completed']))
                         <div class="text-center">
                             <div class="w-12 h-12 rounded-2xl bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-3">
@@ -223,7 +237,6 @@
                             </p>
                         </div>
 
-                    {{-- STATUS: paid --}}
                     @elseif($commission->status === 'paid')
                         <div class="text-center">
                             <div class="w-12 h-12 rounded-2xl bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-3">

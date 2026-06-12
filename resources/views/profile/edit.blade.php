@@ -41,7 +41,8 @@
                     <div class="flex items-center gap-4">
                         <img src="{{ auth()->user()->avatar_url }}" class="w-16 h-16 rounded-full object-cover border border-void-border">
                         <div class="flex-1">
-                            <input type="file" name="avatar" accept="image/*" class="input-void file:mr-3 file:text-xs file:bg-void-dark file:border file:border-void-border file:text-void-gray file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer">
+                            <input type="file" name="avatar" accept="image/*" 
+                                   class="input-void file:mr-3 file:text-xs file:bg-void-dark file:border file:border-void-border file:text-void-gray file:px-3 file:py-1.5 file:rounded-lg file:cursor-pointer">
                             <p class="text-[10px] text-void-muted mt-1">Format: JPG, PNG, WEBP (Max 2MB)</p>
                         </div>
                     </div>
@@ -68,8 +69,10 @@
                 <div class="mb-5">
                     <label class="block text-xs font-bold text-void-light uppercase tracking-wider mb-2">Nomor Telepon</label>
                     <input type="tel" name="phone" value="{{ old('phone', auth()->user()->phone) }}" 
-                           class="input-void w-full" placeholder="08xxxxxxxxxx">
-                    <p class="text-[10px] text-void-muted mt-1">Opsional</p>
+                           class="input-void w-full" placeholder="08123456789 atau 628123456789">
+                    <p class="text-[10px] text-void-muted mt-1">
+                        Masukkan nomor aktif dengan kode area (contoh: 08123456789 atau 628123456789)
+                    </p>
                     @error('phone')<p class="text-xs text-red-400 mt-1">{{ $message }}</p>@enderror
                 </div>
 
@@ -119,7 +122,7 @@
                 <h3 class="text-sm font-bold text-red-400 mb-3">Hapus Akun</h3>
                 <p class="text-xs text-void-gray mb-3">Setelah akun dihapus, semua data akan hilang permanen dan tidak dapat dipulihkan.</p>
                 
-                <button type="button" @click="deleteModal = true" class="text-sm text-red-400 hover:text-red-300 transition-colors">
+                <button type="button" onclick="openDeleteModal()" class="text-sm text-red-400 hover:text-red-300 transition-colors">
                     Hapus Akun Saya
                 </button>
             </div>
@@ -128,22 +131,26 @@
 </div>
 
 {{-- Delete Account Modal --}}
-<div x-data="{ deleteModal: false }">
-    <div x-show="deleteModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
-        <div class="bg-void-card border border-void-border rounded-2xl p-6 max-w-md w-full" @click.away="deleteModal = false">
-            <h3 class="text-lg font-bold text-void-white mb-3">Hapus Akun</h3>
-            <p class="text-sm text-void-gray mb-4">Apakah Anda yakin ingin menghapus akun? Tindakan ini tidak dapat dibatalkan.</p>
-            
+<div id="deleteModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeDeleteModal()"></div>
+        <div class="inline-block align-bottom bg-void-card rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
             <form method="POST" action="{{ route('profile.destroy') }}">
                 @csrf
                 @method('DELETE')
-                <div class="mb-4">
-                    <label class="block text-xs font-bold text-void-light uppercase tracking-wider mb-2">Konfirmasi Password</label>
-                    <input type="password" name="password" required class="input-void w-full">
+                <div class="px-6 py-5">
+                    <h3 class="text-lg font-bold text-void-white mb-3">Hapus Akun</h3>
+                    <p class="text-sm text-void-gray mb-4">Apakah Anda yakin ingin menghapus akun? Tindakan ini tidak dapat dibatalkan.</p>
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-void-light uppercase tracking-wider mb-2">Konfirmasi Password</label>
+                        <input type="password" name="password" required class="input-void w-full">
+                    </div>
                 </div>
-                <div class="flex gap-3">
-                    <button type="button" @click="deleteModal = false" class="btn-secondary flex-1">Batal</button>
-                    <button type="submit" class="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors">
+                <div class="px-6 py-4 bg-void-dark/30 flex justify-end gap-3">
+                    <button type="button" onclick="closeDeleteModal()" class="btn-secondary text-sm px-4 py-2">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors">
                         Hapus Akun
                     </button>
                 </div>
@@ -152,9 +159,19 @@
     </div>
 </div>
 
-@push('styles')
-<style>
-    [x-cloak] { display: none !important; }
-</style>
-@endpush
+<script>
+function openDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeDeleteModal();
+    }
+});
+</script>
 @endsection

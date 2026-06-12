@@ -81,79 +81,125 @@
                     @endif
                 </div>
                 
-               {{-- Size Selection --}}
-@php
-    $hasVariants = false;
-    if (method_exists($product, 'variants') && $product->variants && $product->variants->isNotEmpty()) {
-        $hasVariants = true;
-    }
-    $hasSizes = $product->sizes && is_array($product->sizes) && count($product->sizes) > 0;
-@endphp
+                {{-- Size Selection --}}
+                @php
+                    $hasVariants = false;
+                    if (method_exists($product, 'variants') && $product->variants && $product->variants->isNotEmpty()) {
+                        $hasVariants = true;
+                    }
+                    $hasSizes = $product->sizes && is_array($product->sizes) && count($product->sizes) > 0;
+                @endphp
 
-@if($hasVariants || $hasSizes)
-    <div class="mb-6">
-        <label class="block text-xs font-bold text-void-light uppercase tracking-wider mb-2">Pilih Ukuran</label>
-        <div class="flex flex-wrap gap-2">
-            @if($hasVariants)
-                @foreach($product->variants as $variant)
-                    <label class="cursor-pointer">
-                        <input type="radio" name="size" value="{{ $variant->size }}" 
-                               {{ $loop->first ? 'checked' : '' }}
-                               class="sr-only peer">
-                        <span class="flex items-center justify-center w-12 h-10 rounded-xl
-                                     border border-void-border text-xs font-bold text-void-gray
-                                     peer-checked:border-void-accent peer-checked:text-void-accent
-                                     peer-checked:bg-void-muted/30 hover:border-void-muted
-                                     hover:text-void-light transition-all">
-                            {{ $variant->size }}
-                        </span>
-                    </label>
-                @endforeach
-            @elseif($hasSizes)
-                @foreach($product->sizes as $size)
-                    <label class="cursor-pointer">
-                        <input type="radio" name="size" value="{{ $size }}" 
-                               {{ $loop->first ? 'checked' : '' }}
-                               class="sr-only peer">
-                        <span class="flex items-center justify-center w-12 h-10 rounded-xl
-                                     border border-void-border text-xs font-bold text-void-gray
-                                     peer-checked:border-void-accent peer-checked:text-void-accent
-                                     peer-checked:bg-void-muted/30 hover:border-void-muted
-                                     hover:text-void-light transition-all">
-                            {{ $size }}
-                        </span>
-                    </label>
-                @endforeach
-            @endif
-        </div>
-    </div>
-@else
-    {{-- Hidden input untuk size default jika tidak ada pilihan ukuran --}}
-    <input type="hidden" name="size" value="FREE SIZE" id="default-size">
-@endif
+                @if($hasVariants || $hasSizes)
+                    <div class="mb-6">
+                        <label class="block text-xs font-bold text-void-light uppercase tracking-wider mb-2">Pilih Ukuran</label>
+                        <div class="flex flex-wrap gap-2">
+                            @if($hasVariants)
+                                @foreach($product->variants as $variant)
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="size" value="{{ $variant->size }}" 
+                                               data-stock="{{ $variant->stock }}"
+                                               {{ $loop->first ? 'checked' : '' }}
+                                               class="sr-only peer">
+                                        <span class="flex items-center justify-center w-12 h-10 rounded-xl
+                                                     border border-void-border text-xs font-bold text-void-gray
+                                                     peer-checked:border-void-accent peer-checked:text-void-accent
+                                                     peer-checked:bg-void-muted/30 hover:border-void-muted
+                                                     hover:text-void-light transition-all">
+                                            {{ $variant->size }}
+                                        </span>
+                                    </label>
+                                @endforeach
+                            @elseif($hasSizes)
+                                @foreach($product->sizes as $size)
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="size" value="{{ $size }}" 
+                                               {{ $loop->first ? 'checked' : '' }}
+                                               class="sr-only peer">
+                                        <span class="flex items-center justify-center w-12 h-10 rounded-xl
+                                                     border border-void-border text-xs font-bold text-void-gray
+                                                     peer-checked:border-void-accent peer-checked:text-void-accent
+                                                     peer-checked:bg-void-muted/30 hover:border-void-muted
+                                                     hover:text-void-light transition-all">
+                                            {{ $size }}
+                                        </span>
+                                    </label>
+                                @endforeach
+                            @endif
+                        </div>
+                    </div>
+                @else
+                    <input type="hidden" name="size" value="FREE SIZE" id="default-size">
+                @endif
                 
                 {{-- Description --}}
                 <p class="text-sm text-void-gray leading-relaxed mb-6">
                     {{ $product->description ?? $product->short_description }}
                 </p>
                 
-                {{-- Add to Cart Button --}}
-                <div class="flex gap-3">
+                {{-- Buttons: Add to Cart & Buy Now --}}
+                <div class="flex flex-col sm:flex-row gap-3">
+                    {{-- Tombol Tambah ke Keranjang --}}
                     <button 
                         id="add-to-cart-btn"
                         onclick="addToCart()"
-                        class="flex-1 btn-primary py-3"
+                        class="flex-1 bg-void-card border border-void-border hover:border-void-accent 
+                               text-void-white font-bold py-3 rounded-xl transition-all duration-300
+                               flex items-center justify-center gap-2"
                         {{ !in_array($product->status, ['available', 'preorder']) ? 'disabled' : '' }}
                     >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
+                                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6M18 13l1.5 6M9 21h6M12 18v3"/>
+                        </svg>
                         Tambah ke Keranjang
                     </button>
+                    
+                    {{-- Tombol Beli Sekarang --}}
+                    <button 
+                        id="buy-now-btn"
+                        onclick="buyNow()"
+                        class="flex-1 bg-void-card border border-void-border hover:border-void-accent 
+                               text-void-white font-bold py-3 rounded-xl transition-all duration-300
+                               flex items-center justify-center gap-2"
+                        {{ !in_array($product->status, ['available', 'preorder']) ? 'disabled' : '' }}
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Beli Sekarang
+                    </button>
+                    
+                    {{-- Tombol Wishlist --}}
                     <button 
                         id="wishlist-btn"
                         onclick="toggleWishlist()"
-                        class="w-12 h-12 rounded-xl border border-void-border hover:border-void-accent transition-colors flex items-center justify-center"
+                        class="w-12 h-12 rounded-xl border border-void-border hover:border-void-accent 
+                               transition-colors flex items-center justify-center shrink-0"
                     >
                         @if($inWishlist) ❤️ @else 🤍 @endif
                     </button>
+                </div>
+                
+                {{-- Additional Info --}}
+                <div class="mt-6 pt-6 border-t border-void-border">
+                    <div class="flex items-center gap-4 text-xs text-void-gray">
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
+                                      d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Original Product
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
+                                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                            </svg>
+                            Garansi 100%
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -249,18 +295,19 @@
 
 @push('scripts')
 <script>
+function getSelectedSize() {
+    const sizeRadio = document.querySelector('input[name=size]:checked');
+    if (sizeRadio) {
+        return sizeRadio.value;
+    }
+    return 'FREE SIZE';
+}
+
 function addToCart() {
     const btn = document.getElementById('add-to-cart-btn');
     const originalText = btn.innerHTML;
+    const size = getSelectedSize();
     
-    // Get selected size
-    let size = 'FREE SIZE';
-    const sizeRadio = document.querySelector('input[name=size]:checked');
-    if (sizeRadio) {
-        size = sizeRadio.value;
-    }
-    
-    // Show loading
     btn.innerHTML = `
         <span class="flex items-center justify-center gap-2">
             <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -288,13 +335,11 @@ function addToCart() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Show success notification
             if (window.showNotification) {
                 window.showNotification(data.message, 'success');
             } else {
                 alert(data.message);
             }
-            // Update cart badge
             window.dispatchEvent(new CustomEvent('cart-updated', { 
                 detail: { count: data.count } 
             }));
@@ -315,6 +360,62 @@ function addToCart() {
         }
     })
     .finally(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+
+function buyNow() {
+    const btn = document.getElementById('buy-now-btn');
+    const originalText = btn.innerHTML;
+    const size = getSelectedSize();
+    
+    btn.innerHTML = `
+        <span class="flex items-center justify-center gap-2">
+            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            Memproses...
+        </span>
+    `;
+    btn.disabled = true;
+    
+    fetch('{{ route("cart.add") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            product_id: {{ $product->id }},
+            size: size,
+            quantity: 1,
+            buy_now: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '{{ route("checkout.index") }}';
+        } else {
+            if (window.showNotification) {
+                window.showNotification(data.message || 'Gagal memproses', 'error');
+            } else {
+                alert(data.message || 'Gagal memproses');
+            }
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (window.showNotification) {
+            window.showNotification('Terjadi kesalahan, silakan coba lagi', 'error');
+        } else {
+            alert('Terjadi kesalahan, silakan coba lagi');
+        }
         btn.innerHTML = originalText;
         btn.disabled = false;
     });

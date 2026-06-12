@@ -14,6 +14,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'phone',          // ✅ Tambahkan nomor telepon
         'password',
         'google_id',
         'avatar',
@@ -52,6 +53,38 @@ class User extends Authenticatable
         return 'https://www.gravatar.com/avatar/' . md5(strtolower($this->email)) . '?d=mp&s=200';
     }
 
+    /**
+     * Format nomor telepon
+     */
+    public function getFormattedPhoneAttribute(): string
+    {
+        if (!$this->phone) {
+            return '-';
+        }
+        
+        $phone = $this->phone;
+        
+        // Cek apakah sudah pakai kode negara
+        if (str_starts_with($phone, '62')) {
+            return '+' . $phone;
+        }
+        
+        // Jika mulai dengan 0, ganti jadi +62
+        if (str_starts_with($phone, '0')) {
+            return '+62' . substr($phone, 1);
+        }
+        
+        return $phone;
+    }
+
+    /**
+     * Cek apakah user memiliki nomor telepon
+     */
+    public function hasPhone(): bool
+    {
+        return !empty($this->phone);
+    }
+
     // ─── Relationships ───────────────────────────────────────────────────────
 
     public function cart()
@@ -78,6 +111,4 @@ class User extends Authenticatable
     {
         return $this->hasMany(Review::class)->latest();
     }
-
-    
 }

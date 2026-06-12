@@ -79,13 +79,36 @@
                             <label class="block text-xs font-bold text-void-light uppercase tracking-wider mb-2">
                                 Nomor Telepon *
                             </label>
-                            <input type="text" name="phone"
-                                   value="{{ old('phone') }}"
-                                   class="input-void @error('phone') border-red-500/50 @enderror"
-                                   placeholder="08xxxxxxxxxx" required>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <input type="tel" 
+                                       name="phone"
+                                       id="phone-input"
+                                       value="{{ old('phone', auth()->user()->phone ?? '') }}"
+                                       class="input-void flex-1 @error('phone') border-red-500/50 @enderror"
+                                       placeholder="Contoh: 08123456789 atau 628123456789"
+                                       required>
+                                
+                                @if(auth()->user()->phone)
+                                    <button type="button" 
+                                            onclick="useProfilePhone()"
+                                            class="px-4 py-2.5 rounded-xl bg-void-muted/20 border border-void-border 
+                                                   text-xs font-medium text-void-gray hover:text-void-accent 
+                                                   hover:border-void-accent transition-all whitespace-nowrap">
+                                        📞 Gunakan No. Profile
+                                    </button>
+                                @endif
+                            </div>
                             @error('phone')
                                 <p class="text-xs text-red-400 mt-1">{{ $message }}</p>
                             @enderror
+                            @if(auth()->user()->phone)
+                                <p class="text-[10px] text-void-muted mt-1 flex items-center gap-1">
+                                    <svg class="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Nomor tersimpan: {{ auth()->user()->formatted_phone ?? auth()->user()->phone }}
+                                </p>
+                            @endif
                         </div>
 
                         {{-- Provinsi --}}
@@ -338,7 +361,7 @@
                                            x-text="form.courier.toUpperCase() + ' ' + opt.service"></p>
                                         <p class="text-xs text-void-gray mt-0.5" x-text="opt.description"></p>
                                         <p x-show="opt.etd" x-cloak class="text-[10px] text-void-muted mt-0.5"
-                                           x-text="'Estimasi: ' + opt.etd"></p>
+                                           x-text="'Estimasi: ' + opt.etd + ' hari'"></p>
                                     </div>
                                     <p class="text-base font-black text-void-accent shrink-0 ml-4"
                                        x-text="rupiah(opt.cost)"></p>
@@ -729,6 +752,25 @@ function checkoutApp() {
             return data;
         },
     };
+}
+
+// Fungsi untuk menggunakan nomor telepon dari profile
+function useProfilePhone() {
+    const profilePhone = '{{ auth()->user()->phone ?? '' }}';
+    if (profilePhone) {
+        document.getElementById('phone-input').value = profilePhone;
+        // Optional: Tampilkan notifikasi
+        showToast('Nomor telepon dari profile telah digunakan', 'success');
+    }
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 z-50 px-4 py-2 rounded-lg text-sm 
+                       ${type === 'success' ? 'bg-green-500/90 text-white' : 'bg-red-500/90 text-white'}`;
+    toast.innerText = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
 }
 </script>
 @endpush

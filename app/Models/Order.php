@@ -87,6 +87,48 @@ class Order extends Model
         return $this->hasMany(Review::class);
     }
 
+    /**
+     * Relasi ke Commission (Many-to-Many melalui tabel order_commission)
+     * Komisi yang dibeli dalam order ini
+     */
+    public function commissions()
+    {
+        return $this->belongsToMany(Commission::class, 'order_commission')
+                    ->withPivot('quantity', 'price', 'subtotal', 'commission_rate')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Helper untuk mendapatkan total komisi
+     */
+    public function getTotalCommissionAttribute(): float
+    {
+        if ($this->relationLoaded('commissions')) {
+            return (float) $this->commissions->sum(function($item) {
+                return (float) ($item->pivot->subtotal ?? 0);
+            });
+        }
+        
+        // Fallback jika relasi belum di-load
+        return (float) $this->commissions()->sum('subtotal');
+    }
+
+    /**
+     * Format total komisi ke Rupiah
+     */
+    public function getFormattedTotalCommissionAttribute(): string
+    {
+        return 'Rp ' . number_format($this->total_commission, 0, ',', '.');
+    }
+
+    /**
+     * Mendapatkan semua item order (produk) saja, tanpa komisi
+     */
+    public function productItems()
+    {
+        return $this->hasMany(OrderItem::class)->whereNull('commission_id')->with('product');
+    }
+
     // ─── Scopes ──────────────────────────────────────────────────────────────
 
     public function scopeForUser($query, int $userId)

@@ -22,6 +22,12 @@
                     </div>
                 @endif
 
+                @if(session('error'))
+                    <div class="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                        {{ session('error') }}
+                    </div>
+                @endif
+
                 {{-- Avatar & Nama --}}
                 <div class="flex flex-col items-center text-center mb-6">
                     <div class="w-24 h-24 rounded-full overflow-hidden bg-void-dark mb-3 border-2 border-void-border">
@@ -43,7 +49,11 @@
                     </div>
                     <div class="flex items-center justify-between py-2 border-b border-void-border">
                         <span class="text-xs text-void-gray">Nomor Telepon</span>
-                        <span class="text-sm text-void-white font-medium">{{ $user->phone ?? 'Belum diisi' }}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm text-void-white font-medium">
+                                {{ $user->phone ? ($user->formatted_phone ?? $user->phone) : 'Belum diisi' }}
+                            </span>
+                        </div>
                     </div>
                     <div class="flex items-center justify-between py-2 border-b border-void-border">
                         <span class="text-xs text-void-gray">Bergabung Sejak</span>
@@ -52,7 +62,7 @@
                 </div>
 
                 {{-- Tombol Edit Profile --}}
-                <div class="flex justify-center pt-4 border-t border-void-border">
+                <div class="flex justify-center gap-3 pt-4 border-t border-void-border">
                     <a href="{{ route('profile.edit') }}" 
                        class="btn-primary inline-flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
