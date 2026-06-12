@@ -474,9 +474,29 @@
                 restok, dan penawaran eksklusif member VOID Supply.
             </p>
 
-            <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" method="POST" action="#">
+            @if(session('success'))
+                <div class="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
+                    <p class="text-sm text-green-400">{{ session('success') }}</p>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+                    <p class="text-sm text-red-400">{{ session('error') }}</p>
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+                    <p class="text-sm text-red-400">{{ $errors->first() }}</p>
+                </div>
+            @endif
+
+            <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" 
+                  method="POST" 
+                  action="{{ route('newsletter.subscribe') }}">
                 @csrf
-                <input type="email" name="email" placeholder="Email kamu" class="input-void flex-1" required>
+                <input type="email" name="email" placeholder="Email kamu" class="input-void flex-1" value="{{ old('email') }}" required>
                 <button type="submit" class="btn-primary whitespace-nowrap">
                     Subscribe
                 </button>
@@ -487,5 +507,3 @@
         </div>
     </div>
 </section>
-
-@endsection

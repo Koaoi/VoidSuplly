@@ -1,233 +1,266 @@
 @extends('layouts.app')
 
-@section('title', $commission->title)
+@section('title', 'Detail Commission')
 
 @section('content')
 <div class="pt-24 pb-16">
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
+        {{-- Back --}}
         <a href="{{ route('commission.index') }}"
-           class="inline-flex items-center gap-2 text-xs text-void-gray hover:text-void-accent transition-colors mb-8">
+           class="inline-flex items-center gap-2 text-void-gray hover:text-void-white text-sm mb-6 transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
             Kembali ke Daftar Commission
         </a>
 
-        @if(session('success'))
-            <div class="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
-                <p class="text-sm text-green-400">{{ session('success') }}</p>
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-                <p class="text-sm text-red-400">{{ session('error') }}</p>
-            </div>
-        @endif
-
-        <div class="flex flex-wrap items-start justify-between gap-4 mb-8">
-            <div>
-                <p class="text-[10px] font-bold tracking-[0.3em] text-void-gray uppercase mb-1">Commission Request</p>
-                <h1 class="text-2xl font-black text-void-white">{{ $commission->title }}</h1>
-                <p class="text-xs text-void-gray mt-1">
-                    Dikirim {{ $commission->created_at->diffForHumans() }}
-                    &nbsp;·&nbsp;
-                    {{ $commission->product_type_label }}
-                </p>
-            </div>
-
-            @php
-                $statusColors = [
-                    'pending'     => 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400',
-                    'reviewing'   => 'bg-blue-500/10 border-blue-500/30 text-blue-400',
-                    'accepted'    => 'bg-purple-500/10 border-purple-500/30 text-purple-400',
-                    'in_progress' => 'bg-orange-500/10 border-orange-500/30 text-orange-400',
-                    'completed'   => 'bg-green-500/10 border-green-500/30 text-green-400',
-                    'rejected'    => 'bg-red-500/10 border-red-500/30 text-red-400',
-                    'paid'        => 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400',
-                ];
-            @endphp
-            <span class="text-xs font-bold tracking-widest uppercase border px-4 py-2 rounded-full
-                         {{ $statusColors[$commission->status] ?? 'bg-void-muted text-void-gray' }}">
-                {{ $commission->status_label }}
-            </span>
-        </div>
-
-        <div class="space-y-5">
-
-            <div class="bg-void-card border border-void-border rounded-2xl p-6">
-                <h2 class="text-xs font-bold tracking-[0.2em] text-void-white uppercase mb-4">Deskripsi Desain</h2>
-                <p class="text-sm text-void-light leading-relaxed whitespace-pre-line">{{ $commission->description }}</p>
-            </div>
-
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <div class="bg-void-card border border-void-border rounded-xl p-4">
-                    <p class="text-[10px] text-void-gray uppercase tracking-wider mb-1">Tipe Produk</p>
-                    <p class="text-sm font-bold text-void-white">{{ $commission->product_type_label }}</p>
-                </div>
-                <div class="bg-void-card border border-void-border rounded-xl p-4">
-                    <p class="text-[10px] text-void-gray uppercase tracking-wider mb-1">Jumlah</p>
-                    <p class="text-sm font-bold text-void-white">{{ $commission->quantity }} pcs</p>
-                </div>
-                @if($commission->budget)
-                    <div class="bg-void-card border border-void-border rounded-xl p-4">
-                        <p class="text-[10px] text-void-gray uppercase tracking-wider mb-1">Budget</p>
-                        <p class="text-sm font-bold text-void-white">{{ $commission->formatted_budget }}</p>
-                    </div>
-                @endif
-                @if($commission->quoted_price)
-                    <div class="bg-void-card border border-green-500/30 rounded-xl p-4">
-                        <p class="text-[10px] text-void-gray uppercase tracking-wider mb-1">Harga Quote Admin</p>
-                        <p class="text-sm font-bold text-green-400">{{ $commission->formatted_quoted_price }}</p>
-                    </div>
-                @endif
-            </div>
-
-            @if($commission->reference_image)
-                <div class="bg-void-card border border-void-border rounded-2xl p-6">
-                    <h2 class="text-xs font-bold tracking-[0.2em] text-void-white uppercase mb-4">Gambar Referensi</h2>
-                    <a href="{{ asset('storage/' . $commission->reference_image) }}" target="_blank">
-                        <img src="{{ asset('storage/' . $commission->reference_image) }}"
-                             alt="Referensi desain"
-                             class="max-h-80 rounded-xl object-contain hover:opacity-90 transition-opacity cursor-zoom-in">
-                    </a>
-                    <p class="text-[10px] text-void-gray mt-2 text-center">Klik gambar untuk membuka ukuran penuh</p>
+        {{-- Flash messages --}}
+        @foreach(['success' => 'green', 'error' => 'red', 'info' => 'blue'] as $type => $color)
+            @if(session($type))
+                <div class="mb-6 bg-{{ $color }}-500/10 border border-{{ $color }}-500/30 rounded-xl p-4">
+                    <p class="text-sm text-{{ $color }}-400">{{ session($type) }}</p>
                 </div>
             @endif
+        @endforeach
 
-            @if($commission->admin_note)
-                <div class="bg-void-card border border-blue-500/30 rounded-2xl p-6">
-                    <div class="flex items-center gap-2 mb-3">
-                        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <h2 class="text-xs font-bold tracking-[0.2em] text-blue-400 uppercase">Respons dari Tim VOID Supply</h2>
-                    </div>
-                    <p class="text-sm text-void-light leading-relaxed">{{ $commission->admin_note }}</p>
-                </div>
-            @endif
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <div class="bg-void-card border border-void-border rounded-2xl p-6">
-                <h2 class="text-xs font-bold tracking-[0.2em] text-void-white uppercase mb-5">Progress Status</h2>
-                @php
-                    $steps = [
-                        'pending'     => ['Dikirim', 'Request berhasil masuk ke sistem'],
-                        'reviewing'   => ['Review', 'Tim sedang meninjau request kamu'],
-                        'accepted'    => ['Diterima', 'Request disetujui, menunggu pembayaran'],
-                        'in_progress' => ['Produksi', 'Sedang dikerjakan oleh tim VOID'],
-                        'completed'   => ['Selesai', 'Commission selesai dan dikirim'],
-                    ];
-                    $statusOrder   = array_keys($steps);
-                    $currentStatus = $commission->status;
-                    $currentIdx    = array_search($currentStatus, $statusOrder);
-                @endphp
+            {{-- Detail Panel (kiri) --}}
+            <div class="lg:col-span-2 space-y-4">
 
-                <div class="space-y-4">
-                    @foreach($steps as $status => [$label, $desc])
+                {{-- Info Utama --}}
+                <div class="bg-void-card border border-void-border rounded-2xl overflow-hidden">
+                    <div class="border-b border-void-border px-6 py-4 flex items-center justify-between">
+                        <h2 class="font-bold text-void-white">Detail Commission</h2>
+                        {{-- Badge Status --}}
                         @php
-                            $idx  = array_search($status, $statusOrder);
-                            $done = $currentStatus !== 'rejected' && $currentStatus !== 'paid' && $idx <= $currentIdx;
-                            $isNow = $status === $currentStatus;
+                            $statusConfig = [
+                                'pending'     => ['Menunggu Review',   'bg-yellow-500/20 text-yellow-400'],
+                                'reviewing'   => ['Sedang Direview',   'bg-blue-500/20 text-blue-400'],
+                                'accepted'    => ['Disetujui',          'bg-emerald-500/20 text-emerald-400'],
+                                'in_progress' => ['Sedang Dikerjakan', 'bg-purple-500/20 text-purple-400'],
+                                'completed'   => ['Selesai',            'bg-green-500/20 text-green-400'],
+                                'rejected'    => ['Ditolak',            'bg-red-500/20 text-red-400'],
+                                'paid'        => ['Dibayar',            'bg-green-600/20 text-green-300'],
+                            ];
+                            [$statusLabel, $statusClass] = $statusConfig[$commission->status] ?? [ucfirst($commission->status), 'bg-gray-500/20 text-gray-400'];
                         @endphp
-                        <div class="flex items-start gap-4">
-                            <div class="flex flex-col items-center">
-                                <div class="w-8 h-8 rounded-full flex items-center justify-center border-2
-                                            {{ $done ? 'bg-white border-white' : 'bg-void-dark border-void-border' }}">
-                                    @if($done)
-                                        <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                        </svg>
-                                    @else
-                                        <div class="w-2 h-2 rounded-full bg-void-muted"></div>
-                                    @endif
-                                </div>
-                                @if(!$loop->last)
-                                    <div class="w-0.5 h-6 {{ $done ? 'bg-white' : 'bg-void-border' }} mt-1"></div>
-                                @endif
-                            </div>
-                            <div class="pb-4">
-                                <p class="text-sm font-bold {{ $done ? 'text-void-white' : 'text-void-muted' }}">
-                                    {{ $label }}
-                                    @if($isNow && $currentStatus !== 'rejected' && $currentStatus !== 'paid')
-                                        <span class="ml-2 text-[10px] font-bold text-yellow-400 tracking-widest uppercase">← Sekarang</span>
-                                    @endif
-                                </p>
-                                <p class="text-xs {{ $done ? 'text-void-gray' : 'text-void-muted' }} mt-0.5">{{ $desc }}</p>
-                            </div>
-                        </div>
-                    @endforeach
-
-                    @if($commission->status === 'paid')
-                        <div class="flex items-start gap-4">
-                            <div class="flex flex-col items-center">
-                                <div class="w-8 h-8 rounded-full flex items-center justify-center border-2 bg-emerald-500/10 border-emerald-500/30">
-                                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                </div>
+                        <span class="text-xs font-bold px-3 py-1 rounded-full {{ $statusClass }}">
+                            {{ $statusLabel }}
+                        </span>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-xs text-void-gray mb-1">Judul</p>
+                                <p class="text-sm font-semibold text-void-white">{{ $commission->title }}</p>
                             </div>
                             <div>
-                                <p class="text-sm font-bold text-emerald-400">Dibayar</p>
-                                <p class="text-xs text-void-gray mt-0.5">Pembayaran telah dikonfirmasi, menunggu proses produksi</p>
+                                <p class="text-xs text-void-gray mb-1">Jenis Produk</p>
+                                <p class="text-sm font-semibold text-void-white">{{ $commission->product_type_label }}</p>
                             </div>
+                            <div>
+                                <p class="text-xs text-void-gray mb-1">Jumlah</p>
+                                <p class="text-sm font-semibold text-void-white">{{ $commission->quantity }} pcs</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-void-gray mb-1">Budget Awal</p>
+                                <p class="text-sm font-semibold text-void-white">{{ $commission->formatted_budget }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-void-gray mb-1">Tanggal Request</p>
+                                <p class="text-sm font-semibold text-void-white">{{ $commission->created_at->format('d M Y, H:i') }}</p>
+                            </div>
+                            @if($commission->order_id)
+                                <div>
+                                    <p class="text-xs text-void-gray mb-1">Nomor Order</p>
+                                    <p class="text-sm font-mono text-void-accent">{{ $commission->order->order_code }}</p>
+                                </div>
+                            @endif
                         </div>
-                    @endif
+                        <div>
+                            <p class="text-xs text-void-gray mb-1">Deskripsi</p>
+                            <p class="text-sm text-void-light leading-relaxed">{{ $commission->description }}</p>
+                        </div>
+                    </div>
+                </div>
 
-                    @if($commission->status === 'rejected')
-                        <div class="flex items-start gap-4">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center border-2 bg-red-500/10 border-red-500/30">
-                                <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {{-- Referensi Gambar --}}
+                @if($commission->reference_image_url)
+                    <div class="bg-void-card border border-void-border rounded-2xl overflow-hidden">
+                        <div class="border-b border-void-border px-6 py-4">
+                            <h3 class="font-bold text-void-white text-sm">Gambar Referensi</h3>
+                        </div>
+                        <div class="p-6">
+                            <img src="{{ $commission->reference_image_url }}"
+                                 alt="Referensi"
+                                 class="max-w-xs rounded-xl border border-void-border">
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Catatan Admin --}}
+                @if($commission->admin_note)
+                    <div class="bg-void-card border border-void-border rounded-2xl overflow-hidden">
+                        <div class="border-b border-void-border px-6 py-4">
+                            <h3 class="font-bold text-void-white text-sm">Catatan Admin</h3>
+                        </div>
+                        <div class="p-6">
+                            <p class="text-sm text-void-light leading-relaxed">{{ $commission->admin_note }}</p>
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            {{-- Action Panel (kanan) --}}
+            <div class="space-y-4">
+
+                {{-- Harga --}}
+                @if($commission->quoted_price)
+                    <div class="bg-void-card border border-void-accent/30 rounded-2xl p-6">
+                        <p class="text-xs text-void-gray mb-1">Harga yang Ditetapkan</p>
+                        <p class="text-3xl font-black text-void-accent">
+                            {{ $commission->formatted_quoted_price }}
+                        </p>
+                    </div>
+                @endif
+
+                {{-- Panel Aksi berdasarkan status --}}
+                <div class="bg-void-card border border-void-border rounded-2xl p-6">
+
+                    {{-- STATUS: pending / reviewing --}}
+                    @if(in_array($commission->status, ['pending', 'reviewing']))
+                        <div class="text-center">
+                            <div class="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <p class="text-sm font-semibold text-void-white mb-1">Sedang Diproses</p>
+                            <p class="text-xs text-void-gray">Tim kami sedang mereview commission kamu. Mohon tunggu ya!</p>
+                        </div>
+
+                    {{-- STATUS: rejected --}}
+                    @elseif($commission->status === 'rejected')
+                        <div class="text-center">
+                            <div class="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
                             </div>
-                            <div>
-                                <p class="text-sm font-bold text-red-400">Ditolak</p>
-                                <p class="text-xs text-void-gray mt-0.5">Request tidak dapat diproses</p>
+                            <p class="text-sm font-semibold text-void-white mb-1">Ditolak</p>
+                            <p class="text-xs text-void-gray">Maaf, commission ini tidak dapat kami proses.</p>
+                        </div>
+
+                    {{-- STATUS: accepted — siap bayar atau lanjutkan --}}
+                    @elseif($commission->status === 'accepted')
+                        @php
+                            $canPay = !$commission->order_id
+                                || ($commission->order && $commission->order->status === 'cancelled');
+                            $hasPendingOrder = $commission->order_id
+                                && $commission->order
+                                && $commission->order->status === 'pending';
+                        @endphp
+
+                        @if($canPay)
+                            <div class="text-center">
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-3">
+                                    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <p class="text-sm font-semibold text-void-white mb-1">Commission Disetujui!</p>
+                                <p class="text-xs text-void-gray mb-4">Selesaikan pembayaran untuk memulai proses pengerjaan.</p>
+
+                                <form action="{{ route('commission.process-payment', $commission) }}"
+                                      method="POST"
+                                      onsubmit="return confirm('Lanjutkan ke halaman pembayaran?')">
+                                    @csrf
+                                    <button type="submit" class="btn-primary w-full py-3 text-sm font-bold">
+                                        Bayar Sekarang
+                                    </button>
+                                </form>
+
+                                <p class="text-xs text-void-muted mt-3">
+                                    Tersedia: Transfer Bank, QRIS, Minimarket
+                                </p>
                             </div>
+
+                        @elseif($hasPendingOrder)
+                            <div class="text-center">
+                                <div class="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center mx-auto mb-3">
+                                    <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <p class="text-sm font-semibold text-void-white mb-1">Menunggu Pembayaran</p>
+                                <p class="text-xs text-void-gray mb-4">Order sudah dibuat. Selesaikan pembayaran sebelum kadaluarsa.</p>
+
+                                <a href="{{ route('payment.show', $commission->order->order_code) }}"
+                                   class="btn-primary w-full py-3 text-sm font-bold text-center block">
+                                    Lanjutkan Bayar
+                                </a>
+                            </div>
+                        @endif
+
+                    {{-- STATUS: in_progress / completed --}}
+                    @elseif(in_array($commission->status, ['in_progress', 'completed']))
+                        <div class="text-center">
+                            <div class="w-12 h-12 rounded-2xl bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <p class="text-sm font-semibold text-void-white mb-1">
+                                {{ $commission->status === 'completed' ? 'Selesai!' : 'Sedang Dikerjakan' }}
+                            </p>
+                            <p class="text-xs text-void-gray">
+                                {{ $commission->status === 'completed'
+                                    ? 'Commission kamu sudah selesai dibuat!'
+                                    : 'Tim kami sedang mengerjakan commission kamu.' }}
+                            </p>
+                        </div>
+
+                    {{-- STATUS: paid --}}
+                    @elseif($commission->status === 'paid')
+                        <div class="text-center">
+                            <div class="w-12 h-12 rounded-2xl bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <p class="text-sm font-semibold text-void-white mb-1">Pembayaran Berhasil</p>
+                            <p class="text-xs text-void-gray mb-4">Commission kamu sudah dibayar. Tim kami akan segera memproses.</p>
+
+                            @if($commission->order_id && $commission->order)
+                                <a href="{{ route('orders.show', $commission->order->order_code) }}"
+                                   class="btn-primary w-full py-3 text-sm font-bold text-center block">
+                                    Lihat Detail Pesanan
+                                </a>
+                            @endif
                         </div>
                     @endif
+
                 </div>
-            </div>
 
-            <div class="flex flex-col sm:flex-row gap-3">
+                {{-- Hapus (hanya jika masih pending) --}}
                 @if($commission->status === 'pending')
-                    <form method="POST" action="{{ route('commission.destroy', $commission) }}" class="flex-1">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" onclick="return confirm('Yakin ingin membatalkan commission ini?')" 
-                                class="btn-danger w-full py-3 text-sm">Batalkan Request</button>
-                    </form>
+                    <div class="bg-void-card border border-void-border rounded-2xl p-4">
+                        <form action="{{ route('commission.destroy', $commission) }}"
+                              method="POST"
+                              onsubmit="return confirm('Yakin ingin membatalkan commission ini?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit"
+                                    class="w-full py-2 text-sm font-semibold text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-500/50 rounded-xl transition-all">
+                                Batalkan Commission
+                            </button>
+                        </form>
+                    </div>
                 @endif
 
-                @if($commission->status === 'accepted' && $commission->quoted_price && !$commission->order_id)
-                    <form action="{{ route('commission.process-payment', $commission) }}" method="POST" class="flex-1">
-                        @csrf
-                        <button type="submit" class="btn-primary w-full py-3 text-sm flex items-center justify-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            Bayar Sekarang
-                        </button>
-                    </form>
-                @endif
-
-                @if($commission->status === 'paid' && $commission->order_id && $commission->order)
-                    <a href="{{ route('orders.show', $commission->order->order_code) }}" 
-                       class="btn-primary flex-1 py-3 text-sm flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                  d="M9 5l7 7-7 7"/>
-                        </svg>
-                        Lihat Pesanan
-                    </a>
-                @endif
-
-                <a href="{{ route('commission.create') }}" class="btn-secondary flex-1 text-center py-3 text-sm">
-                    Buat Request Baru
-                </a>
             </div>
         </div>
     </div>

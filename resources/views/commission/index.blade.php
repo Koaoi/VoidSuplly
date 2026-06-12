@@ -6,6 +6,7 @@
 <div class="pt-24 pb-16">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
+        {{-- HEADER (Gabungan) --}}
         <div class="flex items-center justify-between mb-8">
             <div>
                 <p class="text-[10px] font-bold tracking-[0.3em] text-void-gray uppercase mb-2">— Custom Order</p>
@@ -19,17 +20,14 @@
             </a>
         </div>
 
-        @if(session('success'))
-            <div class="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
-                <p class="text-sm text-green-400">{{ session('success') }}</p>
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-                <p class="text-sm text-red-400">{{ session('error') }}</p>
-            </div>
-        @endif
+        {{-- FLASH MESSAGES (Loop dari Kode 1) --}}
+        @foreach(['success' => 'green', 'error' => 'red', 'info' => 'blue'] as $type => $color)
+            @if(session($type))
+                <div class="mb-6 p-4 bg-{{ $color }}-500/10 border border-{{ $color }}-500/30 rounded-xl">
+                    <p class="text-sm text-{{ $color }}-400">{{ session($type) }}</p>
+                </div>
+            @endif
+        @endforeach
 
         @if($commissions->isNotEmpty())
             <div class="space-y-4">
@@ -49,6 +47,7 @@
 
                     <div class="bg-void-card border border-void-border rounded-2xl overflow-hidden hover:border-void-muted transition-colors">
 
+                        {{-- HEADER BAR --}}
                         <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-void-border">
                             <div>
                                 <p class="text-sm font-bold text-void-white">{{ $commission->title }}</p>
@@ -63,8 +62,10 @@
                             </span>
                         </div>
 
+                        {{-- BODY --}}
                         <div class="px-5 py-4 flex flex-col sm:flex-row gap-4">
 
+                            {{-- Gambar Referensi (dari Kode 2) --}}
                             @if($commission->reference_image)
                                 <div class="w-full sm:w-20 h-20 rounded-xl overflow-hidden bg-void-dark shrink-0">
                                     <img src="{{ asset('storage/' . $commission->reference_image) }}"
@@ -81,6 +82,7 @@
                                 </div>
                             @endif
 
+                            {{-- INFO --}}
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm text-void-gray line-clamp-2 leading-relaxed">{{ $commission->description }}</p>
 
@@ -103,6 +105,7 @@
                                     @endif
                                 </div>
 
+                                {{-- Catatan Admin (dari Kode 2) --}}
                                 @if($commission->admin_note)
                                     <div class="mt-3 p-2 bg-void-dark rounded-lg border border-void-border">
                                         <p class="text-[9px] font-bold text-void-gray uppercase tracking-wider mb-0.5">Catatan Admin</p>
@@ -112,8 +115,10 @@
                             </div>
                         </div>
 
-                        {{-- FOOTER ACTIONS --}}
+                        {{-- FOOTER ACTIONS (Gabungan dari Kode 1 & Kode 2) --}}
                         <div class="px-5 py-3 border-t border-void-border bg-void-darker flex flex-wrap items-center gap-3">
+                            
+                            {{-- Tombol Lihat Detail (dari Kode 2) --}}
                             <a href="{{ route('commission.show', $commission) }}"
                                class="text-xs font-semibold text-void-light hover:text-void-accent transition-colors flex items-center gap-1.5">
                                 Lihat Detail
@@ -122,21 +127,45 @@
                                 </svg>
                             </a>
 
-                            {{-- 🔥 TOMBOL BAYAR UNTUK STATUS ACCEPTED --}}
-                            @if($commission->status === 'accepted' && $commission->quoted_price && !$commission->order_id)
-                                <form action="{{ route('commission.process-payment', $commission) }}" method="POST" class="ml-auto">
-                                    @csrf
-                                    <button type="submit" class="btn-primary text-xs py-1.5 px-4 flex items-center gap-1.5">
+                            {{-- 🔥 TOMBOL BAYAR (dari Kode 1 - logic lengkap) --}}
+                            @if($commission->status === 'accepted' && $commission->quoted_price)
+                                @php
+                                    $canPay = !$commission->order_id
+                                        || ($commission->order && $commission->order->status === 'cancelled');
+                                    $hasPendingOrder = $commission->order_id
+                                        && $commission->order
+                                        && $commission->order->status === 'pending';
+                                @endphp
+
+                                @if($canPay)
+                                    <form action="{{ route('commission.process-payment', $commission) }}" 
+                                          method="POST" 
+                                          class="ml-auto"
+                                          onsubmit="return confirm('Lanjutkan ke halaman pembayaran?')">
+                                        @csrf
+                                        <button type="submit" class="btn-primary text-xs py-1.5 px-4 flex items-center gap-1.5">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            Bayar Sekarang
+                                        </button>
+                                    </form>
+                                @elseif($hasPendingOrder)
+                                    {{-- 🔥 LANJUTKAN BAYAR (dari Kode 1) --}}
+                                    <a href="{{ route('payment.show', $commission->order->order_code) }}" 
+                                       class="ml-auto btn-warning text-xs py-1.5 px-4 flex items-center gap-1.5"
+                                       style="background-color: #f59e0b20; border: 1px solid #f59e0b30; color: #fbbf24;">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
-                                        Bayar Sekarang
-                                    </button>
-                                </form>
+                                        Lanjutkan Bayar
+                                    </a>
+                                @endif
                             @endif
 
-                            {{-- 🔥 TOMBOL LIHAT PESANAN UNTUK STATUS PAID --}}
+                            {{-- 🔥 TOMBOL LIHAT PESANAN (dari Kode 2) --}}
                             @if($commission->status === 'paid' && $commission->order_id && $commission->order)
                                 <a href="{{ route('orders.show', $commission->order->order_code) }}" 
                                    class="ml-auto btn-secondary text-xs py-1.5 px-4 flex items-center gap-1.5">
@@ -148,9 +177,12 @@
                                 </a>
                             @endif
 
-                            {{-- TOMBOL BATALKAN UNTUK STATUS PENDING --}}
+                            {{-- 🗑️ TOMBOL BATALKAN (dari Kode 2) --}}
                             @if($commission->status === 'pending')
-                                <form method="POST" action="{{ route('commission.destroy', $commission) }}" class="ml-auto" onsubmit="return confirm('Yakin ingin membatalkan commission ini?')">
+                                <form method="POST" 
+                                      action="{{ route('commission.destroy', $commission) }}" 
+                                      class="ml-auto"
+                                      onsubmit="return confirm('Yakin ingin membatalkan commission ini?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-1.5">
@@ -167,11 +199,13 @@
                 @endforeach
             </div>
 
+            {{-- PAGINATION (dari Kode 2) --}}
             <div class="mt-8">
                 {{ $commissions->links('components.pagination') }}
             </div>
 
         @else
+            {{-- EMPTY STATE (dari Kode 2) --}}
             <div class="flex flex-col items-center justify-center py-24 text-center">
                 <div class="w-24 h-24 rounded-2xl bg-void-card border border-void-border flex items-center justify-center mb-6">
                     <svg class="w-10 h-10 text-void-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">

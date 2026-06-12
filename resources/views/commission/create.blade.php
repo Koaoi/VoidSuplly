@@ -6,6 +6,7 @@
 <div class="pt-24 pb-16">
     <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
 
+        {{-- Header --}}
         <div class="text-center mb-8">
             <div class="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/30
                         flex items-center justify-center mx-auto mb-4">
@@ -14,31 +15,43 @@
                           d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                 </svg>
             </div>
-            <h1 class="text-2xl font-black text-void-white">Buat Commission Request</h1>
+            <p class="text-[10px] font-bold tracking-[0.3em] text-void-gray uppercase mb-1">— Custom Order</p>
+            <h1 class="text-3xl font-black text-void-accent">Buat Commission Request</h1>
             <p class="text-void-gray text-sm mt-2">Isi detail desain yang ingin kamu wujudkan</p>
         </div>
 
+        {{-- Form --}}
         <div class="bg-void-card border border-void-border rounded-2xl p-6">
             <form action="{{ route('commission.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
+                {{-- Judul --}}
                 <div class="mb-5">
                     <label class="block text-xs font-bold text-void-white uppercase tracking-wider mb-2">
                         Judul Commission <span class="text-red-400">*</span>
                     </label>
                     <input type="text" name="title" value="{{ old('title') }}"
-                           class="input-void w-full @error('title') border-red-500 @enderror"
+                           class="w-full bg-void-dark border border-void-border text-void-white placeholder-void-gray
+                                  rounded-xl px-4 py-3 text-sm
+                                  focus:outline-none focus:border-void-muted focus:ring-1 focus:ring-void-muted
+                                  @error('title') border-red-500 @enderror"
                            placeholder="Contoh: Desain Hoodie Streetwear Premium" required>
                     @error('title')
                         <p class="text-xs text-red-400 mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
+                {{-- Tipe Produk --}}
                 <div class="mb-5">
                     <label class="block text-xs font-bold text-void-white uppercase tracking-wider mb-2">
                         Tipe Produk <span class="text-red-400">*</span>
                     </label>
-                    <select name="product_type" class="select-void w-full @error('product_type') border-red-500 @enderror" required>
+                    <select name="product_type" 
+                            class="w-full bg-void-dark border border-void-border text-void-white
+                                   rounded-xl px-4 py-3 text-sm appearance-none
+                                   focus:outline-none focus:border-void-muted focus:ring-1 focus:ring-void-muted
+                                   @error('product_type') border-red-500 @enderror"
+                            required>
                         <option value="">Pilih tipe produk</option>
                         @foreach($productTypes as $key => $label)
                             <option value="{{ $key }}" {{ old('product_type') == $key ? 'selected' : '' }}>{{ $label }}</option>
@@ -49,13 +62,22 @@
                     @enderror
                 </div>
 
+                {{-- Deskripsi --}}
                 <div class="mb-5">
                     <label class="block text-xs font-bold text-void-white uppercase tracking-wider mb-2">
                         Deskripsi Desain <span class="text-red-400">*</span>
                     </label>
                     <textarea name="description" rows="6"
-                              class="textarea-void w-full @error('description') border-red-500 @enderror"
-                              placeholder="Jelaskan detail desain yang kamu inginkan...&#10;&#10;Contoh:&#10;- Warna: Hitam dengan aksen merah&#10;- Motif: Grafis abstrak di bagian dada&#10;- Bahan: Cotton combed 30s&#10;- Referensi style: Streetwear Jepang"
+                              class="w-full bg-void-dark border border-void-border text-void-white placeholder-void-gray
+                                     rounded-xl px-4 py-3 text-sm resize-none
+                                     focus:outline-none focus:border-void-muted focus:ring-1 focus:ring-void-muted
+                                     @error('description') border-red-500 @enderror"
+                              placeholder="Jelaskan detail desain yang kamu inginkan...
+&#10;Contoh:
+- Warna: Hitam dengan aksen merah
+- Motif: Grafis abstrak di bagian dada
+- Bahan: Cotton combed 30s
+- Referensi style: Streetwear Jepang"
                               required>{{ old('description') }}</textarea>
                     <p class="text-[10px] text-void-muted mt-1">Minimal 30 karakter. Semakin detail, semakin baik.</p>
                     @error('description')
@@ -63,13 +85,17 @@
                     @enderror
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 mb-5">
+                {{-- Jumlah & Budget --}}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
                     <div>
                         <label class="block text-xs font-bold text-void-white uppercase tracking-wider mb-2">
                             Jumlah <span class="text-red-400">*</span>
                         </label>
                         <input type="number" name="quantity" value="{{ old('quantity', 1) }}"
-                               class="input-void w-full @error('quantity') border-red-500 @enderror"
+                               class="w-full bg-void-dark border border-void-border text-void-white placeholder-void-gray
+                                      rounded-xl px-4 py-3 text-sm
+                                      focus:outline-none focus:border-void-muted focus:ring-1 focus:ring-void-muted
+                                      @error('quantity') border-red-500 @enderror"
                                min="1" max="100" required>
                         <p class="text-[10px] text-void-muted mt-1">Maksimal 100 pcs</p>
                         @error('quantity')
@@ -79,12 +105,15 @@
 
                     <div>
                         <label class="block text-xs font-bold text-void-white uppercase tracking-wider mb-2">
-                            Budget (Opsional)
+                            Budget <span class="text-void-muted font-normal">(Opsional)</span>
                         </label>
                         <div class="relative">
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-void-gray text-sm">Rp</span>
                             <input type="number" name="budget" value="{{ old('budget') }}"
-                                   class="input-void w-full pl-10 @error('budget') border-red-500 @enderror"
+                                   class="w-full bg-void-dark border border-void-border text-void-white placeholder-void-gray
+                                          rounded-xl pl-8 pr-4 py-3 text-sm
+                                          focus:outline-none focus:border-void-muted focus:ring-1 focus:ring-void-muted
+                                          @error('budget') border-red-500 @enderror"
                                    min="0" placeholder="Estimasi budget">
                         </div>
                         <p class="text-[10px] text-void-muted mt-1">Estimasi budget agar tim bisa memberikan quote yang sesuai</p>
@@ -94,11 +123,13 @@
                     </div>
                 </div>
 
+                {{-- Gambar Referensi --}}
                 <div class="mb-5">
                     <label class="block text-xs font-bold text-void-white uppercase tracking-wider mb-2">
-                        Gambar Referensi (Opsional)
+                        Gambar Referensi <span class="text-void-muted font-normal">(Opsional)</span>
                     </label>
-                    <div class="border-2 border-dashed border-void-border rounded-xl p-6 text-center hover:border-void-accent transition-colors cursor-pointer"
+                    <div class="border-2 border-dashed border-void-border rounded-xl p-6 text-center 
+                                hover:border-void-accent transition-colors cursor-pointer"
                          onclick="document.getElementById('reference_image').click()">
                         <svg class="w-10 h-10 text-void-muted mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
@@ -117,6 +148,7 @@
                     @enderror
                 </div>
 
+                {{-- Info Box --}}
                 <div class="bg-void-dark border border-void-border rounded-xl p-4 mb-6">
                     <div class="flex items-center gap-2 mb-2">
                         <svg class="w-4 h-4 text-void-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,22 +165,31 @@
                     </ul>
                 </div>
 
+                {{-- Buttons --}}
                 <div class="flex flex-col sm:flex-row gap-3">
-                    <button type="submit" class="btn-primary flex-1 py-3 flex items-center justify-center gap-2">
+                    <button type="submit" 
+                            class="flex-1 bg-white text-black font-bold px-6 py-3 rounded-xl
+                                   hover:bg-void-light transition-all duration-200 tracking-wide
+                                   active:scale-[0.98] text-sm flex items-center justify-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                         </svg>
                         Kirim Request
                     </button>
-                    <a href="{{ route('commission.index') }}" class="btn-secondary flex-1 text-center py-3">
+                    <a href="{{ route('commission.index') }}" 
+                       class="flex-1 border border-void-border text-void-light font-medium px-6 py-3 rounded-xl
+                              hover:border-void-muted hover:bg-void-card transition-all duration-200
+                              active:scale-[0.98] text-sm text-center">
                         Batal
                     </a>
                 </div>
             </form>
         </div>
 
+        {{-- Back Link --}}
         <div class="mt-6 text-center">
-            <a href="{{ route('commission.index') }}" class="text-sm text-void-gray hover:text-void-accent transition-colors inline-flex items-center gap-1">
+            <a href="{{ route('commission.index') }}" 
+               class="text-sm text-void-gray hover:text-void-accent transition-colors inline-flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                 </svg>

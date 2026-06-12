@@ -13,6 +13,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\RajaOngkirControllerV2;
+use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CategoryController   as AdminCategory;
 use App\Http\Controllers\Admin\ProductController    as AdminProduct;
@@ -33,6 +34,24 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/product/quick-view/{id}', [ProductController::class, 'quickView'])->name('product.quick-view');
+
+/*
+|==========================================================================
+| INFO PAGES ROUTES
+|==========================================================================
+*/
+Route::get('/about', fn() => view('pages.about'))->name('about');
+Route::get('/size-guide', fn() => view('pages.size-guide'))->name('size-guide');
+Route::get('/how-to-order', fn() => view('pages.how-to-order'))->name('how-to-order');
+Route::get('/returns', fn() => view('pages.returns'))->name('returns');
+Route::get('/contact', fn() => view('pages.contact'))->name('contact');
+
+/*
+|==========================================================================
+| NEWSLETTER ROUTE
+|==========================================================================
+*/
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
 
 /*
 |==========================================================================
@@ -82,6 +101,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::post('/product/{product}/notify', [ProductController::class, 'notifyMe'])->name('product.notify');
 
+    // Cart Routes
     Route::prefix('cart')->name('cart.')->group(function () {
         Route::get('/', [CartController::class, 'index'])->name('index');
         Route::post('/add', [CartController::class, 'add'])->name('add');
@@ -92,33 +112,40 @@ Route::middleware('auth')->group(function () {
         Route::get('/details', [CartController::class, 'details'])->name('details');
     });
 
+    // Wishlist Routes
     Route::prefix('wishlist')->name('wishlist.')->group(function () {
         Route::get('/', [WishlistController::class, 'index'])->name('index');
         Route::post('/toggle', [WishlistController::class, 'toggle'])->name('toggle');
         Route::get('/check/{product}', [WishlistController::class, 'check'])->name('check');
     });
 
+    // Checkout Routes
     Route::prefix('checkout')->name('checkout.')->group(function () {
         Route::get('/', [CheckoutController::class, 'index'])->name('index');
         Route::post('/process', [CheckoutController::class, 'process'])->name('process');
     });
 
+    // Order Routes
     Route::prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
         Route::get('/{code}', [OrderController::class, 'show'])->name('show');
     });
 
+    // Review Routes
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
 
+    // Commission Routes
     Route::prefix('commission')->name('commission.')->group(function () {
         Route::get('/', [CommissionController::class, 'index'])->name('index');
         Route::get('/create', [CommissionController::class, 'create'])->name('create');
         Route::post('/', [CommissionController::class, 'store'])->name('store');
         Route::get('/{commission}', [CommissionController::class, 'show'])->name('show');
         Route::delete('/{commission}', [CommissionController::class, 'destroy'])->name('destroy');
+        Route::post('/{commission}/process-payment', [CommissionController::class, 'processPayment'])->name('process-payment');
     });
 
+    // Profile Routes
     Route::prefix('profile')->name('profile.')->group(function () {
         Route::get('/', [ProfileController::class, 'index'])->name('index');
         Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
@@ -127,6 +154,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
     });
 
+    // Payment Routes
     Route::prefix('payment')->name('payment.')->group(function () {
         Route::get('/{code}', [PaymentController::class, 'show'])->name('show');
         Route::post('/{code}/proof', [PaymentController::class, 'uploadProof'])->name('proof');
@@ -134,13 +162,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/{code}/callback-manual', [PaymentController::class, 'manualCallback'])->name('callback-manual');
     });
 });
-
-/*
-|==========================================================================
-| COMMISSION PROCESS PAYMENT ROUTE
-|==========================================================================
-*/
-Route::post('/commission/{commission}/process-payment', [CommissionController::class, 'processPayment'])->name('commission.process-payment');
 
 /*
 |==========================================================================
@@ -205,38 +226,6 @@ Route::middleware(['auth', 'isAdmin'])
 | TEST ROUTES (Untuk Debug)
 |==========================================================================
 */
-Route::get('/test-ongkir-final', function () {
-    $apiKey = env('RAJAONGKIR_API_KEY');
-    
-    $response = Http::timeout(15)
-        ->asForm()
-        ->withHeaders(['key' => $apiKey])
-        ->post('https://rajaongkir.komerce.id/api/v1/calculate/domestic-cost', [
-            'origin' => 17473,
-            'destination' => 17473,
-            'weight' => 1000,
-            'courier' => 'jne',
-            'price' => 'lowest'
-        ]);
-    
-    $data = $response->json();
-    
-    if (isset($data['data']) && is_array($data['data'])) {
-        $costs = [];
-        foreach ($data['data'] as $item) {
-            $costs[] = [
-                'service' => $item['service'],
-                'description' => $item['description'],
-                'cost' => $item['cost'],
-                'etd' => $item['etd']
-            ];
-        }
-        return response()->json($costs);
-    }
-    
-    return response()->json($data);
-});
-
 Route::get('/test-midtrans', function () {
     $serverKey = config('midtrans.server_key');
     
@@ -245,29 +234,5 @@ Route::get('/test-midtrans', function () {
         'server_key_prefix' => !empty($serverKey) ? substr($serverKey, 0, 15) . '...' : 'null',
         'is_sandbox_format' => !empty($serverKey) && str_starts_with($serverKey, 'SB-Mid-server-'),
         'client_key_exists' => !empty(config('midtrans.client_key')),
-    ]);
-});
-
-Route::get('/test-callback-manual/{orderCode}', function ($orderCode) {
-    $order = \App\Models\Order::where('order_code', $orderCode)->first();
-    
-    if (!$order) {
-        return response()->json(['error' => 'Order not found']);
-    }
-    
-    $order->update(['status' => 'paid']);
-    
-    $payment = \App\Models\Payment::where('order_id', $order->id)->first();
-    if ($payment) {
-        $payment->update([
-            'status' => 'paid',
-            'paid_at' => now(),
-        ]);
-    }
-    
-    return response()->json([
-        'success' => true,
-        'order_code' => $order->order_code,
-        'status' => $order->status
     ]);
 });
