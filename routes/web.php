@@ -14,6 +14,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\RajaOngkirControllerV2;
 use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CategoryController   as AdminCategory;
 use App\Http\Controllers\Admin\ProductController    as AdminProduct;
@@ -34,6 +35,14 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/product/quick-view/{id}', [ProductController::class, 'quickView'])->name('product.quick-view');
+
+/*
+|==========================================================================
+| PORTFOLIO / CONTOH KARYA ROUTES
+|==========================================================================
+*/
+Route::get('/portfolio', [PortfolioController::class, 'index'])->name('portfolio');
+Route::get('/portfolio/{slug}', [PortfolioController::class, 'show'])->name('portfolio.show');
 
 /*
 |==========================================================================
@@ -212,7 +221,14 @@ Route::middleware(['auth', 'isAdmin'])
             Route::get('/', [AdminReview::class, 'index'])->name('index');
             Route::patch('/{review}/approve', [AdminReview::class, 'toggleApprove'])->name('approve');
             Route::delete('/{review}', [AdminReview::class, 'destroy'])->name('destroy');
+            
+            // ⭐ ROUTE UNTUK BALAS REVIEW ⭐
+            Route::patch('/{review}/reply', [AdminReview::class, 'reply'])->name('reply');
         });
+        
+        // ⭐ PORTFOLIO ADMIN ROUTES ⭐
+        Route::resource('portfolio', PortfolioController::class)->except(['show']);
+        Route::patch('/portfolio/{portfolio}/toggle', [PortfolioController::class, 'togglePublish'])->name('portfolio.toggle');
     });
 
 /*

@@ -4,6 +4,64 @@
 
 @section('page-title', 'Laporan Penjualan')
 
+@push('styles')
+<style>
+    /* ⭐ ICON CALENDAR JADI PUTIH ⭐ */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1) brightness(100%) !important;
+        cursor: pointer !important;
+    }
+    
+    input[type="date"]::-moz-calendar-picker-indicator {
+        filter: invert(1) brightness(100%) !important;
+        cursor: pointer !important;
+    }
+    
+    /* ⭐ TOMBOL KONSISTEN ⭐ */
+    .btn-filter, .btn-reset {
+        padding: 10px 24px !important;
+        border-radius: 12px !important;
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        transition: all 0.2s ease !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        height: 44px !important;
+        cursor: pointer !important;
+        border: 1px solid #2d2d44 !important;
+        background: transparent !important;
+        color: #9ca3af !important;
+        text-decoration: none !important;
+    }
+    
+    .btn-filter:hover, .btn-reset:hover {
+        background: rgba(255,255,255,0.05) !important;
+        border-color: #4a4a6a !important;
+        color: #e5e7eb !important;
+    }
+    
+    .btn-print {
+        padding: 10px 24px !important;
+        border-radius: 12px !important;
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        transition: all 0.2s ease !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        height: 44px !important;
+        cursor: pointer !important;
+        border: none !important;
+        background: white !important;
+        color: black !important;
+    }
+    .btn-print:hover {
+        background: #f0f0f0 !important;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="space-y-6">
     
@@ -21,18 +79,15 @@
                        class="input-void w-48">
             </div>
             <div>
-                <button type="submit" class="btn-primary px-6 py-2.5">Filter</button>
+                <button type="submit" class="btn-filter"> Filter</button>
             </div>
             @if(request('start_date') || request('end_date'))
                 <div>
-                    <a href="{{ route('admin.reports.sales') }}" class="btn-secondary px-6 py-2.5">Reset</a>
+                    <a href="{{ route('admin.reports.sales') }}" class="btn-reset">↻ Reset</a>
                 </div>
             @endif
             <div>
-                <a href="{{ route('admin.reports.print-sales', request()->all()) }}" target="_blank" 
-                   class="bg-white text-black px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-void-light transition">
-                    Cetak PDF
-                </a>
+                <button onclick="printReport()" class="btn-print">🖨️ Cetak Laporan</button>
             </div>
         </form>
     </div>
@@ -138,4 +193,58 @@
         Periode: {{ date('d/m/Y', strtotime($startDate)) }} - {{ date('d/m/Y', strtotime($endDate)) }}
     </div>
 </div>
+
+{{-- Script untuk Print Preview --}}
+@push('scripts')
+<script>
+function printReport() {
+    window.print();
+}
+</script>
+
+<style media="print">
+    header, 
+    .btn-filter,
+    .btn-reset,
+    button[onclick="printReport()"],
+    .no-print {
+        display: none !important;
+    }
+    
+    body, 
+    .bg-void-card, 
+    .bg-void-dark,
+    .bg-void-black {
+        background: white !important;
+        color: black !important;
+    }
+    
+    .border-void-border {
+        border-color: #ccc !important;
+    }
+    
+    .text-void-white,
+    .text-void-light,
+    .text-void-gray {
+        color: black !important;
+    }
+    
+    .bg-void-card {
+        background: white !important;
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+    }
+    
+    .bg-yellow-500\/20 { background: #fef3c7 !important; color: #92400e !important; }
+    .bg-green-500\/20 { background: #d1fae5 !important; color: #065f46 !important; }
+    .bg-blue-500\/20 { background: #dbeafe !important; color: #1e40af !important; }
+    .bg-purple-500\/20 { background: #ede9fe !important; color: #5b21b6 !important; }
+    .bg-orange-500\/20 { background: #ffedd5 !important; color: #9a3412 !important; }
+    .bg-red-500\/20 { background: #fee2e2 !important; color: #991b1b !important; }
+    
+    * {
+        color: black !important;
+    }
+</style>
+@endpush
 @endsection

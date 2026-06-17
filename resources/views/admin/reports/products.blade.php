@@ -4,6 +4,30 @@
 
 @section('page-title', 'Laporan Produk')
 
+@push('styles')
+<style>
+    /* ⭐ TOMBOL CETAK ⭐ */
+    .btn-print {
+        padding: 10px 24px !important;
+        border-radius: 12px !important;
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        transition: all 0.2s ease !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        height: 44px !important;
+        cursor: pointer !important;
+        border: none !important;
+        background: white !important;
+        color: black !important;
+    }
+    .btn-print:hover {
+        background: #f0f0f0 !important;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="space-y-6">
     
@@ -31,10 +55,9 @@
     <div class="bg-void-card border border-void-border rounded-2xl overflow-hidden">
         <div class="px-6 py-4 border-b border-void-border flex justify-between items-center">
             <h3 class="text-sm font-bold text-void-white uppercase tracking-wider">Daftar Produk</h3>
-            <a href="{{ route('admin.reports.print-products') }}" target="_blank" 
-               class="bg-white text-black px-4 py-2 rounded-xl text-sm font-bold hover:bg-void-light transition">
-                Cetak PDF
-            </a>
+            
+            {{-- ⭐ TOMBOL CETAK DENGAN PREVIEW ⭐ --}}
+            <button onclick="printReport()" class="btn-print">🖨️ Cetak Laporan</button>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -94,4 +117,78 @@
         @endif
     </div>
 </div>
+
+{{-- ⭐ SCRIPT UNTUK PRINT PREVIEW ⭐ --}}
+@push('scripts')
+<script>
+function printReport() {
+    window.print();
+}
+</script>
+
+<style media="print">
+    header, 
+    button[onclick="printReport()"],
+    .no-print {
+        display: none !important;
+    }
+    
+    body, 
+    .bg-void-card, 
+    .bg-void-dark,
+    .bg-void-black {
+        background: white !important;
+        color: black !important;
+    }
+    
+    .border-void-border {
+        border-color: #ccc !important;
+    }
+    
+    .text-void-white,
+    .text-void-light,
+    .text-void-gray {
+        color: black !important;
+    }
+    
+    .bg-void-card {
+        background: white !important;
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+    }
+    
+    .bg-green-500\/20 { background: #d1fae5 !important; color: #065f46 !important; }
+    .bg-red-500\/20 { background: #fee2e2 !important; color: #991b1b !important; }
+    .bg-yellow-500\/20 { background: #fef3c7 !important; color: #92400e !important; }
+    
+    img {
+        display: block !important;
+        max-width: 40px !important;
+    }
+    
+    * {
+        color: black !important;
+    }
+    
+    .backdrop-blur-md {
+        backdrop-filter: none !important;
+        background: white !important;
+    }
+    
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    
+    th, td {
+        border-bottom: 1px solid #ddd !important;
+        padding: 8px 12px !important;
+    }
+    
+    th {
+        background: #f5f5f5 !important;
+        font-weight: bold !important;
+    }
+</style>
+@endpush
 @endsection

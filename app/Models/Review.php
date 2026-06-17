@@ -17,11 +17,15 @@ class Review extends Model
         'comment',
         'image',
         'is_approved',
+        'admin_reply',              // ⭐ TAMBAHKAN
+        'admin_reply_updated_at',   // ⭐ TAMBAHKAN
+        'admin_reply_by',           // ⭐ TAMBAHKAN (opsional)
     ];
 
     protected $casts = [
         'rating'      => 'integer',
         'is_approved' => 'boolean',
+        'admin_reply_updated_at' => 'datetime',
     ];
 
     public function getStarsAttribute(): string
@@ -32,6 +36,12 @@ class Review extends Model
     public function getImageUrlAttribute(): ?string
     {
         return $this->image ? asset('storage/' . $this->image) : null;
+    }
+
+    // ⭐ RELASI KE ADMIN YANG MEMBALAS
+    public function adminReply()
+    {
+        return $this->belongsTo(User::class, 'admin_reply_by');
     }
 
     public function user()

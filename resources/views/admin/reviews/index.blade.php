@@ -2,20 +2,220 @@
 @section('title','Moderasi Review')
 @section('page-title','Reviews')
 
+@push('styles')
+<style>
+    /* ⭐ STYLE HITAM PUTIH ⭐ */
+    .btn-void-filter, .btn-void-reset {
+        padding: 10px 20px !important;
+        border-radius: 12px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        height: 44px !important;
+        cursor: pointer !important;
+        border: 1px solid #333333 !important;
+        background: transparent !important;
+        color: #aaaaaa !important;
+        text-decoration: none !important;
+    }
+    
+    .btn-void-filter:hover, .btn-void-reset:hover {
+        background: rgba(255,255,255,0.05) !important;
+        border-color: #666666 !important;
+        color: #ffffff !important;
+    }
+    
+    .btn-void-primary {
+        padding: 10px 20px !important;
+        border-radius: 12px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        height: 44px !important;
+        cursor: pointer !important;
+        border: 1px solid #555555 !important;
+        background: #222222 !important;
+        color: #ffffff !important;
+        white-space: nowrap !important;
+    }
+    .btn-void-primary:hover {
+        background: #333333 !important;
+        border-color: #777777 !important;
+    }
+    
+    .btn-void-danger {
+        padding: 10px 20px !important;
+        border-radius: 12px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        transition: all 0.2s ease !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        height: 44px !important;
+        cursor: pointer !important;
+        border: 1px solid #442222 !important;
+        background: transparent !important;
+        color: #cc6666 !important;
+        white-space: nowrap !important;
+    }
+    .btn-void-danger:hover {
+        background: rgba(255,50,50,0.05) !important;
+        border-color: #884444 !important;
+        color: #ff8888 !important;
+    }
+    
+    .btn-void-sm {
+        padding: 6px 16px !important;
+        border-radius: 8px !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        transition: all 0.2s ease !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        height: 32px !important;
+        cursor: pointer !important;
+        border: 1px solid #333333 !important;
+        background: transparent !important;
+        color: #aaaaaa !important;
+        text-decoration: none !important;
+    }
+    .btn-void-sm:hover {
+        background: rgba(255,255,255,0.05) !important;
+        border-color: #666666 !important;
+        color: #ffffff !important;
+    }
+    .btn-void-sm.success {
+        border-color: #224422 !important;
+        color: #66cc88 !important;
+    }
+    .btn-void-sm.success:hover {
+        background: rgba(50,255,100,0.05) !important;
+        border-color: #448844 !important;
+        color: #88ffaa !important;
+    }
+    .btn-void-sm.danger {
+        border-color: #442222 !important;
+        color: #cc6666 !important;
+    }
+    .btn-void-sm.danger:hover {
+        background: rgba(255,50,50,0.05) !important;
+        border-color: #884444 !important;
+        color: #ff8888 !important;
+    }
+    
+    .input-void {
+        background: #111111 !important;
+        border: 1px solid #333333 !important;
+        border-radius: 12px !important;
+        padding: 10px 14px !important;
+        color: #e5e7eb !important;
+        font-size: 13px !important;
+        height: 44px !important;
+        transition: border-color 0.2s !important;
+        width: 100%;
+    }
+    .input-void:focus {
+        outline: none !important;
+        border-color: #666666 !important;
+        box-shadow: 0 0 0 3px rgba(255,255,255,0.05) !important;
+    }
+    .input-void option {
+        background: #111111 !important;
+        color: #e5e7eb !important;
+    }
+    
+    .textarea-void {
+        background: #111111 !important;
+        border: 1px solid #333333 !important;
+        border-radius: 12px !important;
+        padding: 10px 14px !important;
+        color: #e5e7eb !important;
+        font-size: 13px !important;
+        width: 100% !important;
+        resize: vertical !important;
+        min-height: 60px !important;
+        transition: border-color 0.2s !important;
+        font-family: inherit !important;
+    }
+    .textarea-void:focus {
+        outline: none !important;
+        border-color: #666666 !important;
+        box-shadow: 0 0 0 3px rgba(255,255,255,0.05) !important;
+    }
+    .textarea-void::placeholder {
+        color: #555555 !important;
+    }
+    
+    .reply-section {
+        background: rgba(255,255,255,0.03);
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-top: 12px;
+        border-left: 3px solid #555555;
+    }
+    .reply-section .reply-author {
+        color: #888888;
+        font-weight: 600;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+    }
+    .reply-section .reply-text {
+        color: #cccccc;
+        font-size: 13px;
+        margin-top: 4px;
+        line-height: 1.6;
+    }
+    .reply-section .reply-time {
+        color: #555555;
+        font-size: 10px;
+        margin-top: 4px;
+    }
+    
+    .badge-approved {
+        font-size: 10px !important;
+        font-weight: 600 !important;
+        color: #66cc88 !important;
+        background: rgba(50,200,100,0.08) !important;
+        border: 1px solid #224422 !important;
+        padding: 2px 10px !important;
+        border-radius: 20px !important;
+    }
+    .badge-hidden {
+        font-size: 10px !important;
+        font-weight: 600 !important;
+        color: #cc6666 !important;
+        background: rgba(200,50,50,0.08) !important;
+        border: 1px solid #442222 !important;
+        padding: 2px 10px !important;
+        border-radius: 20px !important;
+    }
+</style>
+@endpush
+
 @section('content')
+{{-- Filter --}}
 <form method="GET" action="{{ route('admin.reviews.index') }}" class="flex flex-wrap gap-3 mb-5">
-    <select name="approved" class="input-void w-44 text-sm cursor-pointer">
+    <select name="approved" class="input-void w-44 cursor-pointer">
         <option value="">Semua Review</option>
         <option value="1" {{ request('approved')==='1'?'selected':'' }}>Approved</option>
-        <option value="0" {{ request('approved')==='0'?'selected':'' }}>Pending/Rejected</option>
+        <option value="0" {{ request('approved')==='0'?'selected':'' }}>Pending / Rejected</option>
     </select>
-    <button type="submit" class="btn-primary text-sm px-5">Filter</button>
-    <a href="{{ route('admin.reviews.index') }}" class="btn-secondary text-sm px-5">Reset</a>
+    <button type="submit" class="btn-void-filter">Filter</button>
+    <a href="{{ route('admin.reviews.index') }}" class="btn-void-reset">Reset</a>
 </form>
 
 <div class="space-y-3">
     @forelse($reviews as $review)
         <div class="bg-void-card border border-void-border rounded-2xl p-5 hover:border-void-muted transition-colors">
+            {{-- Header Review --}}
             <div class="flex items-start justify-between gap-4 mb-3">
                 <div class="flex items-center gap-3">
                     <img src="{{ $review->user->avatar_url }}" class="w-9 h-9 rounded-full object-cover border border-void-border shrink-0">
@@ -36,19 +236,20 @@
                             </svg>
                         @endfor
                     </div>
-                    {{-- Approved badge --}}
                     @if($review->is_approved)
-                        <span class="text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full">Approved</span>
+                        <span class="badge-approved">Approved</span>
                     @else
-                        <span class="text-[10px] font-bold text-red-400 bg-red-500/10 border border-red-500/30 px-2 py-0.5 rounded-full">Hidden</span>
+                        <span class="badge-hidden">Hidden</span>
                     @endif
                 </div>
             </div>
 
+            {{-- Comment --}}
             @if($review->comment)
                 <p class="text-sm text-void-light leading-relaxed mb-3">{{ $review->comment }}</p>
             @endif
 
+            {{-- Image --}}
             @if($review->image_url)
                 <div class="mb-3">
                     <a href="{{ $review->image_url }}" target="_blank">
@@ -57,30 +258,72 @@
                 </div>
             @endif
 
-            <div class="flex items-center gap-3 pt-3 border-t border-void-border">
-                <form method="POST" action="{{ route('admin.reviews.approve',$review) }}">
+            {{-- ⭐ BALASAN REVIEW (jika ada) ⭐ --}}
+            @if($review->admin_reply)
+                <div class="reply-section">
+                    <div class="flex items-center gap-2">
+                        <span class="reply-author">Admin Reply</span>
+                        <span class="text-[10px] text-void-gray">· {{ $review->admin_reply_updated_at ? $review->admin_reply_updated_at->diffForHumans() : '' }}</span>
+                    </div>
+                    <p class="reply-text">{{ $review->admin_reply }}</p>
+                </div>
+            @endif
+
+            {{-- ⭐ FORM BALAS REVIEW ⭐ --}}
+            <div class="mt-3">
+                <form id="reply-form-{{ $review->id }}" action="{{ route('admin.reviews.reply', $review) }}" method="POST">
+                    @csrf
+                    @method('PATCH')
+                    
+                    <div class="flex flex-wrap gap-3 items-start">
+                        <textarea 
+                            name="admin_reply" 
+                            placeholder="Reply to this review as admin..." 
+                            rows="2"
+                            class="textarea-void flex-1 min-w-[200px]"
+                        >{{ $review->admin_reply }}</textarea>
+                        
+                        <div class="flex flex-wrap gap-2 shrink-0">
+                            <button type="submit" class="btn-void-primary">
+                                Send Reply
+                            </button>
+                            
+                            @if($review->admin_reply)
+                                <button type="submit" 
+                                        formaction="{{ route('admin.reviews.reply', $review) }}?delete=1"
+                                        class="btn-void-danger"
+                                        onclick="return confirm('Hapus balasan ini?')">
+                                    Delete
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            {{-- Aksi Moderasi --}}
+            <div class="flex items-center gap-3 pt-3 border-t border-void-border mt-3">
+                <form method="POST" action="{{ route('admin.reviews.approve', $review) }}">
                     @csrf @method('PATCH')
                     <button type="submit"
-                            class="text-xs px-4 py-1.5 rounded-lg border transition-colors
-                                   {{ $review->is_approved
-                                       ? 'border-void-border text-void-gray hover:border-void-muted'
-                                       : 'border-green-500/30 text-green-400 hover:bg-green-500/10' }}">
-                        {{ $review->is_approved ? 'Sembunyikan' : 'Approve' }}
+                            class="btn-void-sm {{ $review->is_approved ? 'danger' : 'success' }}">
+                        {{ $review->is_approved ? 'Hide' : 'Approve' }}
                     </button>
                 </form>
-                <form method="POST" action="{{ route('admin.reviews.destroy',$review) }}"
-                      onsubmit="return confirm('Hapus review ini permanen?')">
+                <form method="POST" action="{{ route('admin.reviews.destroy', $review) }}"
+                      id="delete-review-form-{{ $review->id }}">
                     @csrf @method('DELETE')
                     <button type="submit"
-                            class="text-xs px-4 py-1.5 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors">
-                        Hapus
+                            class="btn-void-sm danger"
+                            onclick="return confirm('Hapus review ini permanen?')">
+                        Delete
                     </button>
                 </form>
             </div>
         </div>
     @empty
         <div class="bg-void-card border border-void-border rounded-2xl p-12 text-center">
-            <p class="text-void-gray">Tidak ada review.</p>
+            <p class="text-void-gray">No reviews found.</p>
         </div>
     @endforelse
 

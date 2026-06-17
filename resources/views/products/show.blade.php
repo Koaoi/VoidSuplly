@@ -254,27 +254,65 @@
                 @endif
             </div>
             
-            {{-- Tab Content: Reviews --}}
+            {{-- ⭐ TAB CONTENT: REVIEWS (dengan Foto Profil) ⭐ --}}
             <div x-show="activeTab === 'reviews'" class="space-y-6">
                 @if($reviewsCount > 0)
-                    @foreach($product->reviews as $review)
-                        <div class="border-b border-void-border pb-4">
-                            <div class="flex items-center gap-2 mb-2">
-                                <div class="flex items-center gap-1">
-                                    @for($i = 1; $i <= 5; $i++)
-                                        <svg class="w-3 h-3 {{ $i <= $review->rating ? 'text-yellow-400 fill-yellow-400' : 'text-void-muted' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                                        </svg>
-                                    @endfor
+                    @foreach($product->reviews->where('is_approved', true) as $review)
+                        <div class="border-b border-void-border pb-4 last:border-0">
+                            {{-- Header Review dengan Foto Profil --}}
+                            <div class="flex items-center gap-3 mb-2">
+                                {{-- ⭐ FOTO PROFIL ⭐ --}}
+                                <img src="{{ $review->user->avatar_url ?? asset('images/default-avatar.png') }}" 
+                                     alt="{{ $review->user->name ?? 'Anonymous' }}"
+                                     class="w-8 h-8 rounded-full object-cover border border-void-border shrink-0">
+                                
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-semibold text-void-white">{{ $review->user->name ?? 'Anonymous' }}</span>
+                                        <span class="text-[10px] text-void-muted">· {{ $review->created_at->diffForHumans() }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        @for($i = 1; $i <= 5; $i++)
+                                            <svg class="w-3 h-3 {{ $i <= $review->rating ? 'text-yellow-400 fill-yellow-400' : 'text-void-muted' }}" 
+                                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
+                                                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                                            </svg>
+                                        @endfor
+                                    </div>
                                 </div>
-                                <span class="text-xs text-void-gray">{{ $review->user->name ?? 'Anonymous' }}</span>
-                                <span class="text-[10px] text-void-muted">{{ $review->created_at->diffForHumans() }}</span>
                             </div>
-                            <p class="text-sm text-void-gray">{{ $review->comment }}</p>
+                            
+                            {{-- Comment --}}
+                            <p class="text-sm text-void-gray leading-relaxed">{{ $review->comment }}</p>
+                            
+                            {{-- Image Review (jika ada) --}}
+                            @if($review->image_url)
+                                <div class="mt-2">
+                                    <a href="{{ $review->image_url }}" target="_blank">
+                                        <img src="{{ $review->image_url }}" 
+                                             class="w-16 h-16 rounded-lg object-cover border border-void-border hover:opacity-80 transition-opacity">
+                                    </a>
+                                </div>
+                            @endif
+                            
+                            {{-- ⭐ BALASAN ADMIN (jika ada) ⭐ --}}
+                            @if($review->admin_reply)
+                                <div class="mt-2 pl-4 border-l-2 border-void-muted/30">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] font-semibold text-void-accent">Admin</span>
+                                        <span class="text-[10px] text-void-muted">· {{ $review->admin_reply_updated_at ? $review->admin_reply_updated_at->diffForHumans() : '' }}</span>
+                                    </div>
+                                    <p class="text-xs text-void-gray">{{ $review->admin_reply }}</p>
+                                </div>
+                            @endif
                         </div>
                     @endforeach
                 @else
-                    <p class="text-center text-void-gray py-8">Belum ada ulasan untuk produk ini.</p>
+                    <div class="text-center py-8">
+                        <p class="text-void-gray">Belum ada ulasan untuk produk ini.</p>
+                        <p class="text-xs text-void-muted mt-1">Jadilah yang pertama memberikan ulasan!</p>
+                    </div>
                 @endif
             </div>
         </div>
